@@ -1,0 +1,16 @@
+# Ignore everything.
+*
+
+# Not directories.
+!*/
+
+# Not these source files.
+!*.c
+!*.h
+
+# Not these project files.
+!CMakeLists.txt
+
+# Not these repo files.
+!.gitignore
+!*.md
