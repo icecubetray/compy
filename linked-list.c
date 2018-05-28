@@ -73,3 +73,29 @@ sc_ll_node_swap(sc_ll_node_t *node1, sc_ll_node_t *node2) {
 
 	return 0;
 }
+
+
+
+
+int
+sc_ll_traverse(sc_ll_node_t *start, void(*nodefun)(const sc_ll_node_t *node), const sc_direction_t direction) {
+	if (start == NULL || nodefun == NULL) {
+		return 1;
+	}
+
+	sc_ll_node_t *cursor = start;
+	do {
+		nodefun(cursor);
+
+		switch (direction) {
+			case SC_DIRECTION_FORWARD:
+				cursor = cursor->left;
+				break;
+			case SC_DIRECTION_BACKWARD:
+				cursor = cursor->right;
+				break;
+			default:
+				return 2;
+		}
+	} while (cursor != NULL);
+}

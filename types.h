@@ -13,6 +13,11 @@
 // Quicksortable type.
 typedef size_t sc_qs_t;
 
+typedef enum sc_direction {
+	SC_DIRECTION_FORWARD = 0,
+	SC_DIRECTION_BACKWARD = 1
+} sc_direction_t;
+
 
 
 

@@ -90,6 +90,17 @@ extern "C" {
 	 */
 	int sc_ll_node_swap(sc_ll_node_t *node1, sc_ll_node_t *node2);
 
+	/*!
+	 * \brief Traverses a linked list starting at the node specified by \p start.
+	 *
+	 * \param start The node to start traversing from.
+	 * \param nodefun The function to call for each node.
+	 * \param direction The direction to traverse.
+	 *
+	 * \return `0` on success, `1` on a `NULL` pointer, `2` on an invalid direction.
+	 */
+	int sc_ll_traverse(sc_ll_node_t *start, void(*nodefun)(const sc_ll_node_t *node), const sc_direction_t direction);
+
 #ifdef __cplusplus
 }
 #endif
