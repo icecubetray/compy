@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "./quicksort.h"
+#include "./linked-list-quicksort.h"
 
 
 

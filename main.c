@@ -4,7 +4,21 @@
 #include "./tests.h"
 
 #include "./linked-list.h"
-#include "./quicksort.h"
+#include "./linked-list-quicksort.h"
+
+
+
+
+void
+static print_ll(sc_ll_node_t *node) {
+	do {
+		if (node->frequency == 0) {
+			break;
+		}
+
+		printf("%u: %u\n", node->frequency, node->value);
+	} while (node = node->left);
+}
 
 
 
@@ -49,7 +63,11 @@ int main(int argc, char *argv[], char *env[]) {
 	}
 
 
-	const char data[] = "abcabcabd";
+	const char __data[] = "abcabcabd";
+	const char *data = __data;
+	if (argc > 1) {
+		data = argv[1];
+	}
 
 	size_t
 		i,
@@ -60,10 +78,12 @@ int main(int argc, char *argv[], char *env[]) {
 	sc_qs_pair_t freqs[256];
 	memset(freqs, 0, sizeof(freqs));
 
-
+	// Count frequencies.
 	for (i = len; i--;) {
 		++freqs[data[i]].qsvalue;
 	}
+
+	// Tag what byte they're for.
 	for (i = 256; i--;) {
 		freqs[i].tag = i;
 	}
@@ -71,24 +91,70 @@ int main(int argc, char *argv[], char *env[]) {
 
 	sc_quicksort(freqs, 0, (sizeof(freqs) / sizeof(*freqs)));
 
-
+	// Create a linked list with the least frequent nodes on the
+	// left and the most frequent nodes on the right.
 	for (i = (sizeof(freqs) / sizeof(*freqs)); i--;) {
 		if (root == NULL) {
 			root = sc_ll_node_alloc(freqs[i].qsvalue, (uint8_t)freqs[i].tag);
 			last = root;
 		} else {
-			last->left = sc_ll_node_alloc_ex(freqs[i].qsvalue, (uint8_t)freqs[i].tag, 0, NULL, last);
+			last->left = sc_ll_node_alloc_ex(freqs[i].qsvalue, (uint8_t)freqs[i].tag, SC_LL_LEAF, NULL, last);
 			last = last->left;
 		}
 	}
 
+	print_ll(root);
 
-	last = root;
-	do {
-		if (last->frequency == 0) {
+	sc_ll_node_t
+		*leaf1 = NULL,
+		*leaf2 = NULL,
+		*nonleaf = NULL,
+		*next = NULL;
+	size_t freq;
+
+	// The next step is to pick the last two leaf nodes and hang
+	// them under a non-leaf node, until all nodes are under such
+	// a root node. We do this to create a tree.
+
+	// Iterate through the linked list to the right, beginning at
+	// the left.
+	for (;;) {
+		leaf1 = last;
+		if (leaf1 == NULL) {
 			break;
 		}
 
-		printf("%u: %u\n", last->frequency, last->value);
-	} while (last = last->left);
+		leaf2 = last->right;
+		if (leaf2 == NULL) {
+			break;
+		}
+
+		next = leaf2->right;
+		next->left = NULL;
+		leaf1->left = leaf1->right = NULL;
+		leaf2->left = leaf2->right = NULL;
+
+		// Create a non-leaf node with the combined frequency of
+		// both leaf nodes and the two leaf nodes hanging under
+		// it.
+		freq = (leaf1->frequency + leaf2->frequency);
+		nonleaf = sc_ll_node_alloc_ex(
+			freq,
+			0,
+			0,
+			leaf1,
+			leaf2
+		);
+
+		// Find a spot to put the non-leaf node back in the tree.
+		do {
+			if (freq <= next->frequency) {
+				if (next->left != NULL) {
+
+				}
+			}
+		} while (next = next->right);
+	}
+
+	print_ll(last);
 }

@@ -34,8 +34,25 @@ struct sc_ll_node {
 extern "C" {
 #endif
 
+	/*!
+	 * \brief Allocates a linked-list node.
+	 * \param frequency
+	 * \param value The value for the node.
+	 * \param flags The flags for the node.
+	 * \param left The left-hand node of the new node.
+	 * \param right The right-hand node of the new node.
+	 * \return A pointer to the new linked-list node, or `NULL`
+	 *         when an error occurs.
+	 */
 	sc_ll_node_t* sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t flags, sc_ll_node_t *const left, sc_ll_node_t *const right);
 
+	/*!
+	 * \brief Allocates a linked-list node.
+	 * \param frequency
+	 * \param value The value for the node.
+	 * \return A pointer to the new linked-list node, or `NULL`
+	 *         when an error occurs.
+	 */
 	inline static sc_ll_node_t* sc_ll_node_alloc(const sc_qs_t frequency, const uint8_t value)  {
 		return sc_ll_node_alloc_ex(
 			frequency,
@@ -45,6 +62,33 @@ extern "C" {
 			NULL
 		);
 	}
+
+	/*!
+	 * \brief Searches for the end of the linked-list using the
+	 *        given node.
+	 * \param root A node in the linked-list from which to start
+	 *             searching for the end of the list.
+	 * \return A pointer to the last node in the list, or `NULL`
+	 *         when an error occurs.
+	 */
+	sc_ll_node_t *sc_ll_find_end(sc_ll_node_t *root);
+
+	/*!
+	 * \brief Pushes `node` to the end of `root`.
+	 *
+	 * \param root A node in the linked-list from which to start
+	 *	           searching for the end of the list.
+	 * \param node The node to append to the end of the list.
+	 */
+	int sc_ll_node_push(sc_ll_node_t *root, sc_ll_node_t *node);
+
+	/*!
+	 * \brief Swaps the given nodes around.
+	 *
+	 * \param node1 The first candidate node for the swap.
+	 * \param node2 The second candidate node for the swap.
+	 */
+	int sc_ll_node_swap(sc_ll_node_t *node1, sc_ll_node_t *node2);
 
 #ifdef __cplusplus
 }
