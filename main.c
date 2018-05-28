@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "./tests.h"
@@ -10,14 +11,26 @@
 
 
 void
+__attribute__((nonnull))
+static print_sc_node(const sc_ll_node_t *const node) {
+	if (node->frequency == 0) {
+		return;
+	}
+
+	printf("%u: %u (%c)\n", node->frequency, node->value, node->value);
+}
+
+
+void
 static print_ll(sc_ll_node_t *node) {
-	do {
+	/*do {
 		if (node->frequency == 0) {
 			break;
 		}
 
 		printf("%u: %u\n", node->frequency, node->value);
-	} while (node = node->left);
+	} while (node = node->left);*/
+	sc_ll_traverse(node, print_sc_node, SC_DIRECTION_BACKWARD);
 }
 
 
@@ -103,58 +116,80 @@ int main(int argc, char *argv[], char *env[]) {
 		}
 	}
 
-	print_ll(root);
+	print_ll(last);
+
+	sc_ll_node_t **stack = malloc(0);
+	size_t n_stack = 0;
 
 	sc_ll_node_t
-		*leaf1 = NULL,
-		*leaf2 = NULL,
-		*nonleaf = NULL,
-		*next = NULL;
-	size_t freq;
+		*cursor = last,
+		*left = NULL,
+		*right = NULL,
+		*orphan = NULL;
 
-	// The next step is to pick the last two leaf nodes and hang
-	// them under a non-leaf node, until all nodes are under such
-	// a root node. We do this to create a tree.
-
-	// Iterate through the linked list to the right, beginning at
-	// the left.
-	for (;;) {
-		leaf1 = last;
-		if (leaf1 == NULL) {
-			break;
+	do {
+		if (cursor->frequency == 0) {
+			continue;
 		}
 
-		leaf2 = last->right;
-		if (leaf2 == NULL) {
-			break;
+		left = cursor;
+		right = cursor->right;
+
+		if (right == NULL) {
+			orphan = left;
+		} else {
+			cursor = right;
 		}
 
-		next = leaf2->right;
-		next->left = NULL;
-		leaf1->left = leaf1->right = NULL;
-		leaf2->left = leaf2->right = NULL;
+		size_t index = n_stack++;
 
-		// Create a non-leaf node with the combined frequency of
-		// both leaf nodes and the two leaf nodes hanging under
-		// it.
-		freq = (leaf1->frequency + leaf2->frequency);
-		nonleaf = sc_ll_node_alloc_ex(
-			freq,
-			0,
-			0,
-			leaf1,
-			leaf2
-		);
+		/* realloc() and friends return NULL when out of memory */
+		void *ptr = realloc(stack, (sizeof(*stack) * n_stack));
+		if (ptr == NULL) {
+			fputs("Out of memory.\n", stderr);
+			abort();
+		}
+		stack = ptr;
 
-		// Find a spot to put the non-leaf node back in the tree.
-		do {
-			if (freq <= next->frequency) {
-				if (next->left != NULL) {
+		/* If we end up with an orphan, it gets pushed to the stack as itself. It also
+		** means we reached the end of the list. */
+		if (orphan) {
+			stack[index] = orphan;
+			break;
+		} else {
+			/* No orphan, so both left and right get hung under a new node with their
+			** combined frequency. */
+			stack[index] = sc_ll_node_alloc_ex(left->frequency + right->frequency, 0, 0, left, right);
+		}
+	} while (cursor = cursor->right);
 
-				}
-			}
-		} while (next = next->right);
+	// create qs pairs
+	sc_qs_pair_t *stack_qs = malloc((sizeof(*stack_qs) * n_stack));
+	if (stack_qs == NULL) {
+		fputs("Out of memory (QS).\n", stderr);
+		abort();
 	}
 
-	print_ll(last);
+	for (i = n_stack; i--;) {
+		stack_qs[i].tag = i;
+		stack_qs[i].qsvalue = stack[i]->frequency;
+	}
+
+	sc_quicksort(stack_qs, 0, n_stack);
+
+	puts("");
+	puts("QS");
+
+	for (i = n_stack; i--;) {
+		sc_ll_node_t *qsn = stack[stack_qs[i].tag];
+		if (qsn->left != NULL && qsn->right != NULL) {
+			printf("%u: %u=%c, %u=%c\n", qsn->frequency, qsn->left->frequency, qsn->left->value, qsn->right->frequency, qsn->right->value);
+		} else {
+			printf("%u: %c (orphan)\n", qsn->frequency, qsn->value);
+		}
+	}
+
+
+	/* Currently the first row is listed, so we need to reconstruct a tree from the branch nodes and recurse into it
+	** until there is only an orphan left. */
 }
