@@ -101,6 +101,8 @@ extern "C" {
 	 */
 	int sc_ll_traverse(sc_ll_node_t *start, void(*nodefun)(const sc_ll_node_t *node), const sc_direction_t direction);
 
+	int sc_ll_traverse_tree(sc_ll_node_t *start, void(*nodefun)(const sc_ll_node_t *node));
+
 #ifdef __cplusplus
 }
 #endif

@@ -4,6 +4,7 @@
 
 #include "./tests.h"
 
+#include "./huffman.h"
 #include "./linked-list.h"
 #include "./linked-list-quicksort.h"
 
@@ -13,11 +14,7 @@
 void
 __attribute__((nonnull))
 static print_sc_node(const sc_ll_node_t *const node) {
-	if (node->frequency == 0) {
-		return;
-	}
-
-	printf("%u: %u (%c)\n", node->frequency, node->value, node->value);
+	printf("%p: F=%03u V=%03u L=%p R=%p\n", node, node->frequency, node->value, node->left, node->right);
 }
 
 
@@ -87,7 +84,6 @@ int main(int argc, char *argv[], char *env[]) {
 		len = strlen(data);
 
 
-	sc_ll_node_t *root = NULL, *last = NULL;
 	sc_qs_pair_t freqs[256];
 	memset(freqs, 0, sizeof(freqs));
 
@@ -101,92 +97,41 @@ int main(int argc, char *argv[], char *env[]) {
 		freqs[i].tag = i;
 	}
 
+	sc_quicksort(freqs, 0, 256);
 
-	sc_quicksort(freqs, 0, (sizeof(freqs) / sizeof(*freqs)));
 
-	// Create a linked list with the least frequent nodes on the
-	// left and the most frequent nodes on the right.
-	for (i = (sizeof(freqs) / sizeof(*freqs)); i--;) {
-		if (root == NULL) {
-			root = sc_ll_node_alloc(freqs[i].qsvalue, (uint8_t)freqs[i].tag);
-			last = root;
-		} else {
-			last->left = sc_ll_node_alloc_ex(freqs[i].qsvalue, (uint8_t)freqs[i].tag, SC_LL_LEAF, NULL, last);
-			last = last->left;
-		}
-	}
-
-	print_ll(last);
-
-	sc_ll_node_t **stack = malloc(0);
-	size_t n_stack = 0;
-
-	sc_ll_node_t
-		*cursor = last,
-		*left = NULL,
-		*right = NULL,
-		*orphan = NULL;
-
-	do {
-		if (cursor->frequency == 0) {
+	sc_ll_node_t **ws = malloc(0);
+	size_t n_ws = 0, index;
+	for (i = 256; i--;) {
+		if (freqs[i].qsvalue < 1) {
 			continue;
 		}
 
-		left = cursor;
-		right = cursor->right;
-
-		if (right == NULL) {
-			orphan = left;
-		} else {
-			cursor = right;
-		}
-
-		size_t index = n_stack++;
-
-		/* realloc() and friends return NULL when out of memory */
-		void *ptr = realloc(stack, (sizeof(*stack) * n_stack));
+		index = n_ws++;
+		void *ptr = realloc(ws, (sizeof(*ws) * n_ws));
 		if (ptr == NULL) {
 			fputs("Out of memory.\n", stderr);
 			abort();
-		}
-		stack = ptr;
-
-		/* If we end up with an orphan, it gets pushed to the stack as itself. It also
-		** means we reached the end of the list. */
-		if (orphan) {
-			stack[index] = orphan;
-			break;
 		} else {
-			/* No orphan, so both left and right get hung under a new node with their
-			** combined frequency. */
-			stack[index] = sc_ll_node_alloc_ex(left->frequency + right->frequency, 0, 0, left, right);
+			ws = ptr;
 		}
-	} while (cursor = cursor->right);
 
-	// create qs pairs
-	sc_qs_pair_t *stack_qs = malloc((sizeof(*stack_qs) * n_stack));
-	if (stack_qs == NULL) {
-		fputs("Out of memory (QS).\n", stderr);
-		abort();
+		ws[index] = sc_ll_node_alloc_ex(freqs[i].qsvalue, (uint8_t)freqs[i].tag, SC_LL_LEAF, NULL, NULL);
+
+		printf("%u: %u %u\n", index, ws[index]->frequency, ws[index]->value);
 	}
 
-	for (i = n_stack; i--;) {
-		stack_qs[i].tag = i;
-		stack_qs[i].qsvalue = stack[i]->frequency;
-	}
 
-	sc_quicksort(stack_qs, 0, n_stack);
+	sc_huffman_t context;
+	memset(&context, 0, sizeof(context));
 
-	puts("");
-	puts("QS");
+	sc_ll_node_t *root = NULL;
+	if (__sc_huffman_build_tree_layer(&context, &root, ws, n_ws) == 0) {
+		puts("okay");
 
-	for (i = n_stack; i--;) {
-		sc_ll_node_t *qsn = stack[stack_qs[i].tag];
-		if (qsn->left != NULL && qsn->right != NULL) {
-			printf("%u: %u=%c, %u=%c\n", qsn->frequency, qsn->left->frequency, qsn->left->value, qsn->right->frequency, qsn->right->value);
-		} else {
-			printf("%u: %c (orphan)\n", qsn->frequency, qsn->value);
-		}
+		sc_ll_traverse_tree(root, print_sc_node);
+	} else {
+		puts("not okay");
 	}
 
 

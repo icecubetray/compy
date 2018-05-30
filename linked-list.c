@@ -99,3 +99,25 @@ sc_ll_traverse(sc_ll_node_t *start, void(*nodefun)(const sc_ll_node_t *node), co
 		}
 	} while (cursor != NULL);
 }
+
+
+
+
+int
+sc_ll_traverse_tree(sc_ll_node_t *start, void(*nodefun)(const sc_ll_node_t *node)) {
+	if (start == NULL || nodefun == NULL) {
+		return 1;
+	}
+
+	nodefun(start);
+
+	if (start->left != NULL) {
+		sc_ll_traverse_tree(start->left, nodefun);
+	}
+
+	if (start->right != NULL) {
+		sc_ll_traverse_tree(start->right, nodefun);
+	}
+
+	return 0;
+}
