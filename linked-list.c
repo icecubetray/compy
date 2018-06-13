@@ -1,6 +1,12 @@
 #include "./linked-list.h"
 
 #include <stdlib.h>
+#include <stdio.h>
+
+
+
+
+static size_t __ctr_alloc = 0;
 
 
 
@@ -10,6 +16,11 @@ sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t
 	sc_ll_node_t *node = (sc_ll_node_t*)malloc(sizeof(*node));
 	if (node == NULL) {
 		return NULL;
+	}
+
+	if (++__ctr_alloc > 2000) {
+		fputs("hold ya horses.\n", stderr);
+		abort();
 	}
 
 	node->frequency = frequency;

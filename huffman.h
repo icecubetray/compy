@@ -24,7 +24,7 @@ typedef struct sc_huffman {
 extern "C" {
 #endif
 
-	int __sc_huffman_build_tree_layer(sc_huffman_t *const context, sc_ll_node_t **out_root, sc_ll_node_t *const *const nodes, const size_t n_nodes);
+	int sc_huffman_build_tree(const uint8_t *const data, const size_t length);
 
 #ifdef __cplusplus
 }
