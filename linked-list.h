@@ -16,6 +16,9 @@
 
 typedef struct sc_ll_node sc_ll_node_t;
 struct sc_ll_node {
+	struct sc_ll_node *prev;
+	struct sc_ll_node *next;
+
 	struct sc_ll_node *left;
 	struct sc_ll_node *right;
 
@@ -44,7 +47,7 @@ extern "C" {
 	 * \return A pointer to the new linked-list node, or `NULL`
 	 *         when an error occurs.
 	 */
-	sc_ll_node_t* sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t flags, sc_ll_node_t *const left, sc_ll_node_t *const right);
+	sc_ll_node_t* sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t flags, sc_ll_node_t *const prev, sc_ll_node_t *const next, sc_ll_node_t *const left, sc_ll_node_t *const right);
 
 	/*!
 	 * \brief Allocates a linked-list node.
@@ -53,15 +56,7 @@ extern "C" {
 	 * \return A pointer to the new linked-list node, or `NULL`
 	 *         when an error occurs.
 	 */
-	inline static sc_ll_node_t* sc_ll_node_alloc(const sc_qs_t frequency, const uint8_t value)  {
-		return sc_ll_node_alloc_ex(
-			frequency,
-			value,
-			0,
-			NULL,
-			NULL
-		);
-	}
+	sc_ll_node_t* sc_ll_node_alloc(const sc_qs_t frequency, const uint8_t value);
 
 	/*!
 	 * \brief Searches for the end of the linked-list using the

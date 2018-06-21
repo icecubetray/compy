@@ -12,7 +12,7 @@ static size_t __ctr_alloc = 0;
 
 
 sc_ll_node_t*
-sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t flags, sc_ll_node_t *const left, sc_ll_node_t *const right) {
+sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t flags, sc_ll_node_t *const prev, sc_ll_node_t *const next, sc_ll_node_t *const left, sc_ll_node_t *const right) {
 	sc_ll_node_t *node = (sc_ll_node_t*)malloc(sizeof(*node));
 	if (node == NULL) {
 		return NULL;
@@ -23,13 +23,31 @@ sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t
 		abort();
 	}
 
-	node->frequency = frequency;
-	node->value = value;
-	node->flags = flags;
+	node->prev = prev;
+	node->next = next;
+
 	node->left = left;
 	node->right = right;
 
+	node->frequency = frequency;
+	node->flags = flags;
+	node->value = value;
+
 	return node;
+}
+
+
+sc_ll_node_t *
+sc_ll_node_alloc(const sc_qs_t frequency, const uint8_t value)  {
+	return sc_ll_node_alloc_ex(
+		frequency,
+		value,
+		0,
+		NULL,
+		NULL,
+		NULL,
+		NULL
+	);
 }
 
 
