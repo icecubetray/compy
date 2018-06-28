@@ -53,81 +53,26 @@ sc_huffman_build_tree(const uint8_t *const data, const size_t length) {
 	const size_t offset = (i + 1);
 
 
-	sc_ll_node_t **nodes = malloc((sizeof(*nodes) * n)), next;
+	sc_ll_node_t
+		*nonleaf = NULL,
+		*left = NULL,
+		*right = NULL;
 
-	for (i = 0; i < n; ++i) {
-		sc_ll_node_t *prev = ((i > 0) ? nodes[i - 1] : NULL);
-		nodes[i] = sc_ll_node_alloc_ex(
-			frequencies[offset + i].qsvalue,
-			frequencies[offset + i].tag,
-			SC_LL_LEAF,
-			prev,
-			NULL,
-			NULL,
-			NULL
-		);
-	}
-
-	sc_ll_node_t *last = nodes[i - 1];
-	while (last->prev != NULL) {
-		last->prev->next = last;
-		last = last->prev;
-	}
-
-
-	return sc_tree_layer(nodes, n);
-}
-
-
-
-
-int
-sc_tree_layer(sc_ll_node_t **nodes, const size_t n_nodes) {
-	if (n_nodes < 2) {
-		return 0;
-	}
-
-	size_t n = 0;
-
-	/* Logic scope */ {
-		sc_ll_node_t *last = nodes[0], *prev = NULL;
-		while (last->left != NULL) {
-			prev = last;
-			last = last->left;
-			++n;
-		}
-		printf("depth: %u\n", n);
-
-		sc_ll_node_t *left = last;
-		sc_ll_node_t *right = left->next;
-
-		sc_ll_node_t *nonleaf = sc_ll_node_alloc_ex(
-			(left->frequency + right->frequency),
-			0,
-			0,
-			NULL,
-			right->next,
-			left,
-			right
-		);
-
-		left->prev = NULL;
-		if (right->next) {
-			right->next->prev = nonleaf;
-		}
-		right->next = NULL;
-
-		if (prev != NULL) {
-			prev->left = nonleaf;
+	size_t sn = 0;
+	while (sn < n) {
+		if (nonleaf != NULL) {
+			left = nonleaf;
+		} else {
+			left = sc_ll_node_alloc_ex(frequencies[offset + sn].qsvalue, frequencies[offset + sn].tag, SC_LL_LEAF, NULL, NULL, NULL, NULL);
+			++sn;
 		}
 
-		n = 0;
-		last = nonleaf;
-		while (last->next != NULL) {
-			++n;
-			last = last->next;
-		}
+		right = sc_ll_node_alloc_ex(frequencies[offset + sn].qsvalue, frequencies[offset + sn].tag, SC_LL_LEAF, NULL, NULL, NULL, NULL);
+		++sn;
+
+		nonleaf = sc_ll_node_alloc_ex(left->frequency + right->frequency, 0, 0, NULL, NULL, left, right);
 	}
 
-	return sc_tree_layer(nodes, n);
+
+	return 0;
 }
