@@ -1,34 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "./huffman.h"
 
 #include "./tests.h"
 
-#include "./huffman.h"
-#include "./linked-list.h"
-#include "./linked-list-quicksort.h"
-
-
-
-
-void
-__attribute__((nonnull))
-static print_sc_node(const sc_ll_node_t *const node) {
-	printf("%p: F=%03u V=%03u L=%p R=%p\n", node, node->frequency, node->value, node->left, node->right);
-}
-
-
-void
-static print_ll(sc_ll_node_t *node) {
-	/*do {
-		if (node->frequency == 0) {
-			break;
-		}
-
-		printf("%u: %u\n", node->frequency, node->value);
-	} while (node = node->left);*/
-	sc_ll_traverse(node, print_sc_node, SC_DIRECTION_BACKWARD);
-}
+#include <stdio.h>
+#include <string.h>
 
 
 
@@ -39,7 +14,9 @@ const char ord_indicators[][3] = {
 	"rd",
 	"th"
 };
-int main(int argc, char *argv[], char *env[]) {
+
+int
+main(int argc, char *argv[], char *env[]) {
 	{
 		const struct {
 			int(*func)();
@@ -79,5 +56,14 @@ int main(int argc, char *argv[], char *env[]) {
 		data = argv[1];
 	}
 
-	return sc_huffman_build_tree(data, strlen(data));
+
+	sc_huffman_t huff;
+
+	sc_huffman_init(&huff);
+	sc_huffman_process(&huff, data, strlen(data));
+	sc_huffman_build_tree(&huff);
+	sc_huffman_clear(&huff);
+
+
+	return 0;
 }
