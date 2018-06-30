@@ -1,2 +1,1 @@
-# Crap
-Absolute staggering amount of memory leaks.
+I love, among others, sushi, pizza, and pasta.
