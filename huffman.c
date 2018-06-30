@@ -72,7 +72,7 @@ sc_huffman_process(sc_huffman_t *const restrict context, const void *const restr
 
 
 sc_result_t
-sc_huffman_build_tree(sc_huffman_t *const context) {
+sc_huffman_tree_build(sc_huffman_t *const context) {
 	if (context == NULL) {
 		return SC_E_NULL;
 	}
@@ -165,7 +165,7 @@ sc_huffman_build_tree(sc_huffman_t *const context) {
 
 
 sc_result_t
-sc_huffman_print_tree(sc_huffman_t *context) {
+sc_huffman_tree_print(sc_huffman_t *context) {
 	if (context == NULL) {
 		return SC_E_NULL;
 	}

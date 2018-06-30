@@ -61,8 +61,8 @@ main(int argc, char *argv[], char *env[]) {
 
 	sc_huffman_init(&huff);
 	sc_huffman_process(&huff, data, strlen(data));
-	sc_huffman_build_tree(&huff);
-	sc_huffman_print_tree(&huff);
+	sc_huffman_tree_build(&huff);
+	sc_huffman_tree_print(&huff);
 	sc_huffman_clear(&huff);
 
 
