@@ -162,3 +162,62 @@ sc_huffman_build_tree(sc_huffman_t *const context) {
 
 	return SC_E_SUCCESS;
 }
+
+
+sc_result_t
+sc_huffman_print_tree(sc_huffman_t *context) {
+	if (context == NULL) {
+		return SC_E_NULL;
+	}
+
+
+	const sc_ll_node_t
+		*const *const tree_lookup = (const sc_ll_node_t *const *const)context->tree_lookup,
+		*node = NULL;
+
+
+	// TODO: sort by freq
+
+	register unsigned int i, j;
+	for (i = 0; i < 256; ++i) {
+		if (tree_lookup[i] != NULL) {
+			printf("% 3u (%u)\t", i, context->frequencies[i]);
+
+			size_t n = 0;
+			node = tree_lookup[i];
+			while ((node = node->parent) != NULL) {
+				++n;
+			}
+
+			char binbuf[n + 1];
+
+			node = tree_lookup[i];
+			for (j = n; j--;) {
+				if (node == NULL) {
+					break;
+				}
+
+				/* Check if we reached the root of the tree. */
+				if (node->parent == NULL) {
+					break;
+				}
+
+				if ((node->flags & SC_LL_LEFT) == SC_LL_LEFT) {
+					binbuf[j] = '1';
+				} else if ((node->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
+					binbuf[j] = '0';
+				} else {
+					fputs("?", stdout);
+				}
+
+				node = node->parent;
+			}
+
+			binbuf[n] = '\0';
+			puts(binbuf);
+		}
+	}
+
+
+	return SC_E_SUCCESS;
+}
