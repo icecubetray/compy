@@ -3,7 +3,77 @@
 #include "./tests.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
 #include <string.h>
+
+
+
+
+#define SC_OPTION_HELP						'h'
+#define SC_OPTION_COMPRESS					'c'
+#define SC_OPTION_DECOMPRESS				'd'
+#define SC_OPTION_INPUT_FILE				'i'
+#define SC_OPTION_OUTPUT_FILE				'o'
+
+
+
+
+void
+parse_options(int argc, char *argv[]) {
+	const static struct option options_long[] = {
+		{ "help",		no_argument,		NULL, SC_OPTION_HELP		},
+		{ "compress",	no_argument,		NULL, SC_OPTION_COMPRESS	},
+		{ "decompress",	no_argument,		NULL, SC_OPTION_DECOMPRESS	},
+		{ "if",			required_argument,	NULL, SC_OPTION_INPUT_FILE	},
+		{ "of",			required_argument,	NULL, SC_OPTION_OUTPUT_FILE	},
+		{ NULL,			0,					NULL, 0						}
+	};
+
+	const static char options_short[] = "hcdi:o:";
+
+
+	/* Reset getopt's parsing index, ya never know. */
+	optind = 1;
+
+
+	int opt_result, opt_index;
+	do {
+		opt_result = getopt_long(argc, argv, options_short, options_long, &opt_index);
+		if (opt_result == -1) {
+			break;
+		} else {
+			switch (opt_result) {
+				case SC_OPTION_HELP:
+					printf("Usage: %s <mode> [options]\n", argv[0]);
+					puts(
+						"\n"
+						"Mode:\n"
+						"    -c, --compress      Compression mode\n"
+						"    -d, --decompress    Decompression mode\n"
+						"\n"
+						"Options:\n"
+						"    -h, --help          Show this help message\n"
+						"    -i, --if=<file>     Specify input file path, or - for stdin\n"
+						"    -o, --of=<file>     Specify output file path, or - for stdout"
+					);
+					exit(0);
+				case SC_OPTION_COMPRESS:
+					break;
+				case SC_OPTION_DECOMPRESS:
+					break;
+				case SC_OPTION_INPUT_FILE:
+					break;
+				case SC_OPTION_OUTPUT_FILE:
+					break;
+			}
+		}
+	} while (1);
+
+
+	/* Reset getopt's parsing index once more, to be nice. */
+	optind = 1;
+}
 
 
 
@@ -13,6 +83,10 @@ main(int argc, char *argv[], char *env[]) {
 	if (sc_run_tests() != 0) {
 		return 10;
 	}
+
+
+	parse_options(argc, argv);
+
 
 	const char __data[] = "abcabcabd";
 	const char *data = __data;
