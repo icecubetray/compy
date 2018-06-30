@@ -5,7 +5,7 @@ add_executable(
 	${PROJECT_NAME}
 	"main.c" "types.h" "result.h"
 	"huffman.c" "huffman.h"
-	"linked-list-quicksort.c" "linked-list-quicksort.h"
+	"quicksort.c" "quicksort.h"
 	"linked-list.c" "linked-list.h"
 	"tests.c" "tests.h"
 )

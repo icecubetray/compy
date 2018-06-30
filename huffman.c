@@ -1,7 +1,7 @@
 #include "./huffman.h"
 
 #include "./linked-list.h"
-#include "./linked-list-quicksort.h"
+#include "./quicksort.h"
 
 #include <stdio.h>
 #include <string.h>
