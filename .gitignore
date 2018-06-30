@@ -4,6 +4,10 @@
 # Not directories.
 !*/
 
+# Except...
+bin/
+obj/
+
 # Not these source files.
 !*.c
 !*.h
