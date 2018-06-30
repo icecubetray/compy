@@ -64,9 +64,27 @@ main(int argc, char *argv[], char *env[]) {
 		return 1;
 	}
 
-	if (sc_huffman_process(&huff, data, strlen(data)) != SC_E_SUCCESS) {
-		perror("Huffman processing failed.");
-		return 2;
+	const size_t datalen = strlen(data);
+	if (datalen == 1 && *data == '-') {
+		uint8_t buffer[512];
+		int running = 1;
+		size_t r;
+		do {
+			if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), stdin)) == 0) {
+				running = 0;
+				break;
+			}
+
+			if (sc_huffman_process(&huff, buffer, r) != SC_E_SUCCESS) {
+				perror("Huffman processing failed.");
+				return 2;
+			}
+		} while (running == 1);
+	} else {
+		if (sc_huffman_process(&huff, data, datalen) != SC_E_SUCCESS) {
+			perror("Huffman processing failed.");
+			return 2;
+		}
 	}
 
 	if (sc_huffman_tree_build(&huff) != SC_E_SUCCESS) {
