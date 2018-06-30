@@ -15,6 +15,8 @@ extern "C" {
 
 	int sc_test_quicksort();
 
+	int sc_run_tests();
+
 #ifdef __cplusplus
 }
 #endif

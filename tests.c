@@ -89,3 +89,48 @@ sc_test_quicksort() {
 
 	return !(cond_asc && cond_desc);
 }
+
+
+
+
+const char ord_indicators[][3] = {
+	"st",
+	"nd",
+	"rd",
+	"th"
+};
+
+int
+sc_run_tests() {
+	const struct {
+		int(*func)();
+		char name[16];
+	} test_cases[] = {
+		{
+			.func = sc_test_quicksort,
+			.name = "quicksort"
+		}
+	};
+
+	int failed = 0;
+
+	size_t tcase = (sizeof(test_cases) / sizeof(*test_cases));
+	for (; tcase--;) {
+		if (test_cases[tcase].func() != 0) {
+			++failed;
+			printf(
+				"%u%s "
+				"failed test: %s\n",
+				failed, ((failed < 4) ? ord_indicators[failed - 1] : ord_indicators[3]),
+				test_cases[tcase].name
+			);
+		}
+	}
+
+	if (failed > 0) {
+		puts("tests failed");
+		return failed;
+	}
+
+	return 0;
+}
