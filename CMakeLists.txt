@@ -8,4 +8,5 @@ add_executable(
 	"linked_list.c" "linked_list.h"
 	"quicksort.c" "quicksort.h"
 	"huffman.c" "huffman.h"
+	"file.c" "file.h"
 )

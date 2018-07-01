@@ -2,6 +2,7 @@
 
 
 
+
 size_t
 static sc_quicksort_find_pivot(sc_qs_pair_t *const array, size_t left, size_t right, const sc_qs_t cmp, const int ascending) {
 	const size_t right_cpy = right;

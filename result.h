@@ -12,6 +12,8 @@
 #define SC_E_NULL							1
 #define SC_E_PARAM							2
 #define SC_E_LOCKED							3
+#define SC_E_NOT_READY						4
+#define SC_E_IO								5
 
 
 

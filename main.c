@@ -1,4 +1,5 @@
 #include "./huffman.h"
+#include "./file.h"
 
 #include "./tests.h"
 
@@ -135,11 +136,30 @@ main(int argc, char *argv[], char *env[]) {
 		return 4;
 	}
 
-	if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
-		perror("Huffman context clearing failed.");
+
+	sc_file_t file;
+
+	if (sc_file_open(&file, "./test.sca", 1) != SC_E_SUCCESS) {
+		perror("Failed to open file.");
 		return 5;
 	}
 
+	if (sc_file_write_header(&file, &huff) != SC_E_SUCCESS) {
+		perror("Failed to write header.");
+		return 6;
+	}
+
+	if (sc_file_close(&file) != SC_E_SUCCESS) {
+		perror("failed to close file.");
+		return 7;
+	}
+
+
+
+	if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
+		perror("Huffman context clearing failed.");
+		return 16;
+	}
 
 	return 0;
 }
