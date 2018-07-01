@@ -1,6 +1,5 @@
 #include "./huffman.h"
 
-#include "./linked-list.h"
 #include "./quicksort.h"
 
 #include <stdio.h>
