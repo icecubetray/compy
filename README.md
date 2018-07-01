@@ -4,10 +4,12 @@ I love, among others, sushi, pizza, and pasta.
 ## File format
 
 ```
-magic: 4 bytes
-map_count: 1 byte
-map_node: 3-? bytes
-data: * bytes
+header
++ magic: 4 bytes
++ map_count: 1 byte
++ map_node: 3-? bytes
+body
++ data: * bytes
 
 magic
 0x20 0x16 0x11 0x27

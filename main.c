@@ -149,9 +149,14 @@ main(int argc, char *argv[], char *env[]) {
 		return 6;
 	}
 
+	if (sc_file_write_data(&file, data, datalen) != SC_E_SUCCESS) {
+		perror("Failed to write data.");
+		return 7;
+	}
+
 	if (sc_file_close(&file) != SC_E_SUCCESS) {
 		perror("failed to close file.");
-		return 7;
+		return 8;
 	}
 
 

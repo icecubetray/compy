@@ -29,6 +29,7 @@ sc_file_open(sc_file_t *const restrict file, const char *const restrict path, co
 
 	memset(file, 0, sizeof(*file));
 	file->fp = fp;
+	file->state = SC_FILE_STATE_IDLE;
 
 
 	return SC_E_SUCCESS;
@@ -73,84 +74,250 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 		return SC_E_NOT_READY;
 	}
 
+	if (file->state != SC_FILE_STATE_IDLE) {
+		return SC_E_STATE;
+	}
 
-	const sc_ll_node_t
-		*const *const tree_lookup = (const sc_ll_node_t *const *const)context->tree_lookup,
-		*tnode = NULL;
 
+	unsigned int populated;
+	register unsigned int i;
 	sc_file_header_node_t *hnode = NULL;
 
-	size_t
-		nbits,
-		data_idx;
+	if ((populated = file->header.populated) == 0) {
+		const sc_ll_node_t
+			*const *const tree_lookup = (const sc_ll_node_t *const *const)context->tree_lookup,
+			*tnode = NULL;
 
-	register unsigned int i, current;
-	for (i = 256; i--;) {
-		if (tree_lookup[i] != NULL) {
-			tnode = tree_lookup[i];
-			hnode = &file->header.map[i];
+		size_t
+			nbits,
+			data_idx;
 
-			puts("");
-			printf("currently processing %u @ %p / %p\n", i, tnode, hnode);
+		register unsigned int current;
+		for (i = 256, populated = 0; i--;) {
+			if (tree_lookup[i] != NULL) {
+				++populated;
+				tnode = tree_lookup[i];
+				hnode = &file->header.map[i];
 
-			data_idx = 0;
-			current = 0;
+				puts("");
+				printf("currently processing %u @ %p / %p\n", i, tnode, hnode);
 
-			for (nbits = 0;;) {
-				if (tnode == NULL) {
-					break;
-				}
-
-				/* Check if we reached the root of the tree. */
-				if (tnode->parent == NULL) {
-					break;
-				}
-
-				current <<= 1;
-				if ((tnode->flags & SC_LL_LEFT) == SC_LL_LEFT) {
-					current |= 1;
-				} else if ((tnode->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
-					/* NOOP */
-					// current |= 0;
-				} else {
-					puts("not left or right");
-					abort(); // TODO
-				}
-
-				/* Check if nbits is a multiple of 8. */
-				if ((++nbits & 7) == 0) {
-					hnode->data[data_idx] = (uint8_t)(current & 0xFF);
-					current = 0;
-
-					printf("%X ", hnode->data[data_idx]);
-
-					if (++data_idx > sizeof(hnode->data)) {
-						puts("data_idx bounds");
-						abort(); // TODO
-					}
-				}
-
-				tnode = tnode->parent;
-			}
-
-			/* Check if there's any bits left, and if so fetch the remaining ones. */
-			if ((nbits & 7) != 0) {
-				hnode->data[data_idx++] = (uint8_t)(current & 0xFF);
+				data_idx = 0;
 				current = 0;
 
-				printf("%X", hnode->data[data_idx-1]);
+				for (nbits = 0;;) {
+					if (tnode == NULL) {
+						break;
+					}
+
+					/* Check if we reached the root of the tree. */
+					if (tnode->parent == NULL) {
+						break;
+					}
+
+					current <<= 1;
+					if ((tnode->flags & SC_LL_LEFT) == SC_LL_LEFT) {
+						current |= 1;
+					} else if ((tnode->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
+						/* NOOP */
+						// current |= 0;
+					} else {
+						puts("not left or right");
+						abort(); // TODO
+					}
+
+					/* Check if nbits is a multiple of 8. */
+					if ((++nbits & 7) == 0) {
+						hnode->data[data_idx] = (uint8_t)(current & 0xFF);
+						current = 0;
+
+						printf("%X ", hnode->data[data_idx]);
+
+						if (++data_idx > sizeof(hnode->data)) {
+							puts("data_idx bounds");
+							abort(); // TODO
+						}
+					}
+
+					tnode = tnode->parent;
+				}
+
+				/* Check if there's any bits left, and if so fetch the remaining ones. */
+				if ((nbits & 7) != 0) {
+					hnode->data[data_idx++] = (uint8_t)(current & 0xFF);
+					current = 0;
+
+					printf("%X", hnode->data[data_idx-1]);
+				}
+
+				hnode->nbits = nbits;
+
+				printf("\nused %u bit%s\n", nbits, ((nbits == 1) ? "" : "s"));
 			}
+		}
 
-			hnode->nbits = nbits;
+		file->header.populated = populated;
+	}
 
-			printf("\nused %u bit%s\n", nbits, ((nbits == 1) ? "" : "s"));
+
+	/* Check if everything went okay. */
+	if (populated == 0) {
+		return SC_E_DATA;
+	}
+
+
+	/* Rewind the stream. */
+	if (fseek(file->fp, 0, SEEK_SET) != 0) {
+		return SC_E_IO;
+	}
+
+
+	const static uint8_t magic[4] = { 0x20, 0x16, 0x11, 0x27 };
+
+	/* Write our magic to indicate the file type. */
+	if (fwrite(magic, sizeof(*magic), (sizeof(magic) / sizeof(*magic)), file->fp) != sizeof(magic)) {
+		return SC_E_IO;
+	}
+
+	/* Write the map count. */
+	if (fwrite(&file->header.populated, sizeof(uint8_t), 1, file->fp) != sizeof(uint8_t)) {
+		return SC_E_IO;
+	}
+
+	/* Write all map nodes. */
+	uint8_t buffer[34];
+	register size_t nbits, nbytes;
+	for (i = 256; i--;) {
+		hnode = &file->header.map[i];
+
+		if ((nbits = hnode->nbits) > 0) {
+			/* The node's value. */
+			buffer[0] = (uint8_t)(i & 0xFF);
+
+			/* The number of bits used by the node's data. */
+			buffer[1] = (uint8_t)(nbits & 0xFF);
+
+			/* The node's data. */
+			nbytes = ((nbits / 8) + 1);
+			memcpy(&buffer[2], hnode->data, nbytes);
+
+			nbytes += 2;
+			if (fwrite(buffer, 1, nbytes, file->fp) != nbytes) {
+				return SC_E_IO;
+			}
 		}
 	}
 
 
-	if (fwrite("header\n", 1, 7, file->fp) != 7) {
+	/* Flush the header. */
+	if (fflush(file->fp) != 0) {
 		return SC_E_IO;
 	}
+
+
+	file->state = SC_FILE_STATE_WR_HEADER;
+
+
+	return SC_E_SUCCESS;
+}
+
+
+
+
+sc_result_t
+sc_file_write_data(sc_file_t *const restrict file, const void *const restrict data, const size_t size) {
+	if (file == NULL || data == NULL) {
+		return SC_E_NULL;
+	}
+
+	if (size == 0) {
+		return SC_E_PARAM;
+	}
+
+	if (file->state != SC_FILE_STATE_WR_HEADER) {
+		return SC_E_STATE;
+	}
+
+	if (file->header.populated == 0) {
+		return SC_E_NOT_READY;
+	}
+
+
+	const sc_file_header_node_t *node = NULL;
+	const uint8_t *const data8 = (const uint8_t *const)data;
+
+	uint8_t buffer[512];
+
+	register unsigned int
+		i,
+		nbits, rbits, wbits,
+		bits = file->last_bits,
+		byte = file->last_byte,
+		buffer_index = 0, index;
+
+	uint8_t value;
+	for (i = 0; i < size; ++i) {
+		/* Fetch the current value. */
+		value = data8[i];
+
+		/* Fetch the header node associated with the current value. */
+		node = &file->header.map[value];
+
+		/* Check if we can even process the current value. */
+		if ((nbits = node->nbits) == 0) {
+			puts("unmapped byte");
+			abort(); // TODO
+		}
+
+
+		index = 0;
+
+
+		/* Determine how many bits we have to process. */
+		rbits = (bits + nbits);
+
+		/* While we have more than or equal to 8 bits remaining. */
+		while (rbits >= 8) {
+			/* Check if we need to flush the buffer, and do so if required. */
+			if (buffer_index >= sizeof(buffer)) {
+				if (fwrite(buffer, 1, buffer_index, file->fp) != buffer_index) {
+					puts("buffer flush fail");
+					abort(); // TODO
+				}
+
+				buffer_index = 0;
+			}
+
+			/* If we have some bits left from a previous iteration, first process those bits.
+ 			** Otherwise write the full bytes. */
+			if (bits > 0) {
+				/* Determine number of bits to fill up with the current value. */
+				wbits = (8 - bits);
+
+				/* Push the remaining value all the way to the left and add the filler bits
+ 				** from the current value. */
+				byte = ((byte << wbits) | (value & ((1 << wbits) - 1)));
+
+				/* Reset bits, we won't be needing these anymore during this iteration. */
+				bits = 0;
+			} else {
+				/* Write the full byte. */
+				byte = value;
+			}
+
+			/* Write the byte to the buffer. */
+			buffer[buffer_index++] = byte;
+			rbits -= 8;
+		}
+
+		/* We might have some bits left to process, pass them on to the next iteration. */
+		bits = rbits;
+		byte = (value & ((1 << bits) - 1));
+	}
+
+	/* Save our state for the next call, or final processing. */
+	file->last_bits = bits;
+	file->last_byte = byte;
 
 
 	return SC_E_SUCCESS;
