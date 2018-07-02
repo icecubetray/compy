@@ -43,6 +43,21 @@ sc_file_close(sc_file_t *const file) {
 	}
 
 
+	if (file->last_bits > 0) {
+		if (file->fp == NULL) {
+			return SC_E_IO;
+		}
+
+		uint8_t byte = (uint8_t)(file->last_byte & ((1 << file->last_bits) - 1));
+		if (fwrite(&byte, sizeof(byte), 1, file->fp) != sizeof(byte)) {
+			puts("fwrite() failed to write last byte");
+			return SC_E_IO;
+		}
+
+		file->last_bits = file->last_byte = 0;
+	}
+
+
 	if (file->fp != NULL) {
 		if (fclose(file->fp) == 0) {
 			file->fp = NULL;
