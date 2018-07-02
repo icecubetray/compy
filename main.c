@@ -103,9 +103,10 @@ main(int argc, char *argv[], char *env[]) {
 		return 1;
 	}
 
-	const size_t datalen = strlen(data);
+	size_t datalen = strlen(data);
 	if (datalen == 1 && *data == '-') {
-		uint8_t buffer[512];
+		size_t sz = 0;
+		uint8_t buffer[512], *alloc = NULL;
 		int running = 1;
 		size_t r;
 		do {
@@ -114,16 +115,24 @@ main(int argc, char *argv[], char *env[]) {
 				break;
 			}
 
-			if (sc_huffman_process(&huff, buffer, r) != SC_E_SUCCESS) {
-				perror("Huffman processing failed.");
-				return 2;
+			void *ptr = realloc(alloc, (sz + r));
+			if (ptr == NULL) {
+				puts("memorayyy");
+				abort();
 			}
+			alloc = ptr;
+
+			memcpy((alloc + sz), buffer, r);
+			sz += r;
 		} while (running == 1);
-	} else {
-		if (sc_huffman_process(&huff, data, datalen) != SC_E_SUCCESS) {
-			perror("Huffman processing failed.");
-			return 2;
-		}
+
+		data = alloc;
+		datalen = sz;
+	}
+
+	if (sc_huffman_process(&huff, data, datalen) != SC_E_SUCCESS) {
+		perror("Huffman processing failed.");
+		return 2;
 	}
 
 	if (sc_huffman_tree_build(&huff) != SC_E_SUCCESS) {
