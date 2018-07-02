@@ -285,6 +285,7 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 
 		index = 0;
+		wbits = 0;
 
 
 		/* Determine how many bits we have to process. */
@@ -310,13 +311,13 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 				/* Push the remaining value all the way to the left and add the filler bits
  				** from the current value. */
-				byte = ((byte << wbits) | (value & ((1 << wbits) - 1)));
+				byte = ((byte << wbits) | (node->data[index] & ((1 << wbits) - 1)));
 
 				/* Reset bits, we won't be needing these anymore during this iteration. */
 				bits = 0;
 			} else {
-				/* Write the full byte. */
-				byte = value;
+				byte = (node->data[index] & ((1 << (8 - wbits)) - 1));
+				byte |= (node->data[++index] & ((1 << wbits) - 1));
 			}
 
 			/* Write the byte to the buffer. */
@@ -324,9 +325,28 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 			rbits -= 8;
 		}
 
-		/* We might have some bits left to process, pass them on to the next iteration. */
+		if (rbits == 0) {
+			byte = bits = 0;
+			continue;
+		}
+
+		nbits = (rbits - bits);
+
+		/* We have some bits left to process, pass them on to the next iteration. */
+		byte = ((byte << nbits) | (node->data[index] & ((1 << nbits) - 1)));
 		bits = rbits;
-		byte = (value & ((1 << bits) - 1));
+	}
+
+	if (buffer_index > 0) {
+		if (fwrite(buffer, 1, buffer_index, file->fp) != buffer_index) {
+			puts("fwrite() failed to write full stuff");
+			return SC_E_IO;
+		}
+	}
+
+	if (fflush(file->fp) != 0) {
+		puts("fflush() failed");
+		return SC_E_IO;
 	}
 
 	/* Save our state for the next call, or final processing. */
