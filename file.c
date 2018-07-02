@@ -130,9 +130,8 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 						break;
 					}
 
-					current <<= 1;
 					if ((tnode->flags & SC_LL_LEFT) == SC_LL_LEFT) {
-						current |= 1;
+						current |= (1 << (nbits % 8));
 					} else if ((tnode->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
 						/* NOOP */
 						// current |= 0;
