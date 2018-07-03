@@ -96,7 +96,8 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 	size_t n = 0;
 	register unsigned int i;
 
-	sc_qs_pair_t freqs_sorted[256], *fqp; {
+	sc_qs_pair_t freqs_sorted[256], *fqp;
+	/* Frequency sorting scope. */ {
 		const sc_qs_t *const freqs = context->frequencies;
 
 		/* Set the tag and sortable value of all pairs according to
@@ -114,35 +115,36 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 		}
 	}
 
-	const unsigned int offset = (256 - n);
-
-	unsigned int scanline_idx = 0;
 	sc_huffman_node_t *scanline = calloc(n, sizeof(*scanline)), *current;
-	for (i = offset; i < 256; ++i) {
-		scanline_idx = (i - offset);
-		fqp = &freqs_sorted[i];
+	/* Scanline initialization scope. */ {
+		unsigned int scanline_idx = 0;
+		const unsigned int offset = (256 - n);
+		for (i = offset; i < 256; ++i) {
+			scanline_idx = (i - offset);
+			fqp = &freqs_sorted[i];
 
-		current = &scanline[scanline_idx];
+			current = &scanline[scanline_idx];
 
-		if (scanline_idx > 0) {
-			current->previous = &scanline[scanline_idx - 1];
+			if (scanline_idx > 0) {
+				current->previous = &scanline[scanline_idx - 1];
+			}
+
+			if (scanline_idx < (n - 1)) {
+				current->next = &scanline[scanline_idx + 1];
+			}
+
+			current->node = sc_ll_node_alloc(
+				fqp->qsvalue,
+				fqp->tag,
+				SC_LL_LEAF
+			);
+			context->tree_lookup[fqp->tag] = current->node;
 		}
-
-		if (scanline_idx < (n - 1)) {
-			current->next = &scanline[scanline_idx + 1];
-		}
-
-		current->node = sc_ll_node_alloc(
-			fqp->qsvalue,
-			fqp->tag,
-			SC_LL_LEAF
-		);
-		context->tree_lookup[fqp->tag] = current->node;
 	}
 
 
 	unsigned int
-		n_null = 0,
+		n_processed = 0,
 		end = (n - 1),
 		left_idx = 0,
 		right_idx = 0,
@@ -155,6 +157,7 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 	sc_ll_node_t *nonleaf = NULL;
 
 	do {
+		/* Fetch two least frequent nodes. */
 		for (i = 0; i < n; ++i) {
 			current = &scanline[i];
 
@@ -172,13 +175,17 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 			}
 		}
 
-		if (right == NULL) {
+		/* Failsafe. */
+		if (left == NULL || right == NULL) {
 			break;
 		}
 
+
+		/* Specify direction indicators. */
 		left->node->flags |= SC_LL_LEFT;
 		right->node->flags |= SC_LL_RIGHT;
 
+		/* Allocate the nonleaf node. */
 		nonleaf = sc_ll_node_alloc_ex(
 			(left->node->frequency + right->node->frequency),
 			0,
@@ -186,20 +193,54 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 			left->node,
 			right->node
 		);
+
+		/* Assign the left/right parent to the nonleaf. */
 		left->node->parent = right->node->parent = nonleaf;
+
+		/* Clear the left/right nodes. */
 		left->node = right->node = NULL;
-		++n_null;
 
-		// TODO: o=find_sorted_insert_point, memmove(left_idx - o-1, right_idx - o), sl[o]=nonleaf
-		scanline[right_idx].node = nonleaf;
 
+		/* Find the insertion point of the nonleaf node. */
+		for (i = right_idx; i < n; ++i) {
+			current = &scanline[i];
+
+			if (current->node == NULL) {
+				continue;
+			}
+
+			if (current->node->frequency >= nonleaf->frequency) {
+				break;
+			}
+		}
+
+		/* Store our findings. */
+		next_idx = (i - 1);
+
+
+		/* Move everything, from the left index to the insertion point, one node to the left. */
+		for (i = left_idx; i < next_idx; ++i) {
+			scanline[i].node = scanline[i + 1].node;
+		}
+
+		/* Insert the nonleaf node at its insertion point. */
+		scanline[next_idx].node = nonleaf;
+
+
+		/* Clear the left/right pointers. */
 		left = right = NULL;
-	} while (n_null < end);
 
+		/* Increment the counter keeping track of how many nodes we processed, and thus have left to process. */
+		++n_processed;
+	} while (n_processed < end);
+
+
+	/* Free memory allocated for the scanline. */
 	free(scanline);
 	scanline = NULL;
 
 
+	/* Store the root node of the tree, which is the last allocated nonleaf node. */
 	context->tree_root = nonleaf;
 
 
