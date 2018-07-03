@@ -4,6 +4,18 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+
+
+
+typedef struct sc_huffman_node sc_huffman_node_t;
+
+struct sc_huffman_node {
+	sc_ll_node_t *node;
+	sc_huffman_node_t *previous;
+	sc_huffman_node_t *next;
+};
 
 
 
@@ -82,9 +94,10 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 
 
 	size_t n = 0;
-	sc_qs_pair_t freqs_sorted[256]; {
+	register unsigned int i;
+
+	sc_qs_pair_t freqs_sorted[256], *fqp; {
 		const sc_qs_t *const freqs = context->frequencies;
-		register unsigned int i;
 
 		/* Set the tag and sortable value of all pairs according to
  		** the measured frequencies. */
@@ -101,59 +114,90 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 		}
 	}
 
+	const unsigned int offset = (256 - n);
 
-	sc_qs_pair_t
-		*const freqs = &freqs_sorted[((sizeof(freqs_sorted) / sizeof(*freqs_sorted)) - n)],
-		*current = NULL;
+	unsigned int scanline_idx = 0;
+	sc_huffman_node_t *scanline = calloc(n, sizeof(*scanline)), *current;
+	for (i = offset; i < 256; ++i) {
+		scanline_idx = (i - offset);
+		fqp = &freqs_sorted[i];
 
-	sc_ll_node_t
-		*nonleaf = NULL,
-		*left = NULL,
-		*right = NULL,
-		**tree_lookup = context->tree_lookup;
+		current = &scanline[scanline_idx];
 
-	size_t sn = 0;
-	// FIXME: tree is currently as clever as a rock (excluding CPUs)
-	while (sn < n) {
-		/* First we determine what is left, and what is right. */
-
-		current = &freqs[sn++];
-
-		if (nonleaf != NULL) {
-			left = nonleaf;
-		} else {
-			left = sc_ll_node_alloc(
-				current->qsvalue,
-				current->tag,
-				SC_LL_LEAF
-			);
-			tree_lookup[current->tag] = left;
-
-			/* Shift current to the next pair. */
-			current = &freqs[sn++];
+		if (scanline_idx > 0) {
+			current->previous = &scanline[scanline_idx - 1];
 		}
 
-		right = sc_ll_node_alloc(
-			current->qsvalue,
-			current->tag,
+		if (scanline_idx < (n - 1)) {
+			current->next = &scanline[scanline_idx + 1];
+		}
+
+		current->node = sc_ll_node_alloc(
+			fqp->qsvalue,
+			fqp->tag,
 			SC_LL_LEAF
 		);
-		tree_lookup[current->tag] = right;
+		context->tree_lookup[fqp->tag] = current->node;
+	}
 
 
-		/* Then we stick to our decision, and hang them under a non-leaf node. */
+	unsigned int
+		n_null = 0,
+		end = (n - 1),
+		left_idx = 0,
+		right_idx = 0,
+		next_idx = 0;
 
-		left->flags |= SC_LL_LEFT;
-		right->flags |= SC_LL_RIGHT;
+	sc_huffman_node_t
+		*left = NULL,
+		*right = NULL;
+
+	sc_ll_node_t *nonleaf = NULL;
+
+	do {
+		for (i = 0; i < n; ++i) {
+			current = &scanline[i];
+
+			if (current->node == NULL) {
+				continue;
+			}
+
+			if (left == NULL) {
+				left = current;
+				left_idx = i;
+			} else if (right == NULL) {
+				right = current;
+				right_idx = i;
+				break;
+			}
+		}
+
+		if (right == NULL) {
+			break;
+		}
+
+		left->node->flags |= SC_LL_LEFT;
+		right->node->flags |= SC_LL_RIGHT;
 
 		nonleaf = sc_ll_node_alloc_ex(
-			(left->frequency + right->frequency),
+			(left->node->frequency + right->node->frequency),
 			0,
 			0,
-			left, right
+			left->node,
+			right->node
 		);
-		left->parent = right->parent = nonleaf;
-	}
+		left->node->parent = right->node->parent = nonleaf;
+		left->node = right->node = NULL;
+		++n_null;
+
+		// TODO: o=find_sorted_insert_point, memmove(left_idx - o-1, right_idx - o), sl[o]=nonleaf
+		scanline[right_idx].node = nonleaf;
+
+		left = right = NULL;
+	} while (n_null < end);
+
+	free(scanline);
+	scanline = NULL;
 
 
 	context->tree_root = nonleaf;
