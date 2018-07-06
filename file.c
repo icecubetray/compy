@@ -177,20 +177,29 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	}
 
 
+	uint8_t buffer[34], *buffptr = buffer;
+
+
 	const static uint8_t magic[4] = { 0x20, 0x16, 0x11, 0x27 };
 
-	/* Write our magic to indicate the file type. */
-	if (fwrite(magic, sizeof(*magic), (sizeof(magic) / sizeof(*magic)), file->fp) != sizeof(magic)) {
+	/* Prepare our magic to indicate the file type. */
+	memcpy(buffptr, magic, sizeof(magic));
+	buffptr += sizeof(magic);
+
+	/* Prepare the placeholder for the number of bits that should be trimmed from the last byte. */
+	*buffptr++ = 0;
+
+	/* Prepare the map count. */
+	*buffptr++ = (uint8_t)(file->header.populated & 0xFF);
+
+
+	/* Write what we prepared to the file. */
+	if (fwrite(buffer, sizeof(uint8_t), (buffptr - buffer), file->fp) != (buffptr - buffer)) {
 		return SC_E_IO;
 	}
 
-	/* Write the map count. */
-	if (fwrite(&file->header.populated, sizeof(uint8_t), 1, file->fp) != sizeof(uint8_t)) {
-		return SC_E_IO;
-	}
 
 	/* Write all map nodes. */
-	uint8_t buffer[34];
 	register size_t nbits, nbytes;
 	for (i = 256; i--;) {
 		hnode = &file->header.map[i];
