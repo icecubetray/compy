@@ -114,9 +114,6 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 				tnode = tree_lookup[i];
 				hnode = &file->header.map[i];
 
-				puts("");
-				printf("currently processing %u @ %p / %p\n", i, tnode, hnode);
-
 				data_idx = 0;
 				current = 0;
 
@@ -145,8 +142,6 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 						hnode->data[data_idx] = (uint8_t)(current & 0xFF);
 						current = 0;
 
-						printf("%X ", hnode->data[data_idx]);
-
 						if (++data_idx > sizeof(hnode->data)) {
 							puts("data_idx bounds");
 							abort(); // TODO
@@ -160,13 +155,9 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 				if ((nbits & 7) != 0) {
 					hnode->data[data_idx++] = (uint8_t)(current & 0xFF);
 					current = 0;
-
-					printf("%X", hnode->data[data_idx-1]);
 				}
 
 				hnode->nbits = nbits;
-
-				printf("\nused %u bit%s\n", nbits, ((nbits == 1) ? "" : "s"));
 			}
 		}
 
