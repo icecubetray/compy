@@ -148,7 +148,7 @@ main(int argc, char *argv[], char *env[]) {
 
 
 
-	uint8_t buffer[512];
+	uint8_t buffer[2048];
 	int running;
 	size_t r;
 
