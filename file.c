@@ -54,6 +54,13 @@ sc_file_close(sc_file_t *const file) {
 			return SC_E_IO;
 		}
 
+		fseek(file->fp, 4, SEEK_SET);
+		byte = (uint8_t)file->last_bits;
+		if (fwrite(&byte, sizeof(byte), 1, file->fp) != sizeof(byte)) {
+			puts("fwrite() failed to write trim byte");
+			return SC_E_IO;
+		}
+
 		file->last_bits = file->last_byte = 0;
 	}
 
@@ -186,7 +193,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	memcpy(buffptr, magic, sizeof(magic));
 	buffptr += sizeof(magic);
 
-	/* Prepare the placeholder for the number of bits that should be trimmed from the last byte. */
+	/* Prepare the placeholder for the number of bits that should be used from the last byte. */
 	*buffptr++ = 0;
 
 	/* Prepare the map count. */
