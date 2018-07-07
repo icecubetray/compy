@@ -230,6 +230,10 @@ main(int argc, char *argv[], char *env[]) {
 		output_file = alloc = NULL;
 	}
 
+	if (fclose(fp) != 0) {
+		perror("fclose()");
+	}
+
 	if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
 		fputs("Huffman context clearing failed.\n", stderr);
 		return 16;
