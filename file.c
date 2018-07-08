@@ -131,7 +131,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 		return SC_E_NOT_READY;
 	}
 
-	if (file->state != SC_FILE_STATE_IDLE) {
+	if (file->state != SC_FILE_STATE_IDLE && file->state != SC_FILE_STATE_WR_HEADER) {
 		return SC_E_STATE;
 	}
 
@@ -271,7 +271,7 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 		return SC_E_PARAM;
 	}
 
-	if (file->state != SC_FILE_STATE_WR_HEADER) {
+	if (file->state != SC_FILE_STATE_WR_HEADER && file->state != SC_FILE_STATE_WR_DATA) {
 		return SC_E_STATE;
 	}
 
@@ -375,6 +375,9 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 	/* Save our state for the next call, or final processing. */
 	file->last_bits = bits;
 	file->last_byte = byte;
+
+
+	file->state = SC_FILE_STATE_WR_DATA;
 
 
 	return SC_E_SUCCESS;

@@ -13,8 +13,9 @@
 
 
 
-#define SC_FILE_STATE_IDLE				1
+#define SC_FILE_STATE_IDLE					1
 #define SC_FILE_STATE_WR_HEADER				2
+#define SC_FILE_STATE_WR_DATA				3
 
 
 
