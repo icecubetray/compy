@@ -20,6 +20,7 @@ sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t
 	}
 
 
+	/* Failsafe in case we're running amok. */
 	if (++__ctr_alloc > 2000) {
 		fputs("hold ya horses.\n", stderr);
 		abort();
@@ -60,16 +61,22 @@ sc_ll_node_free(sc_ll_node_t *const node, const unsigned int children_too) {
 		return SC_E_NULL;
 	}
 
+
 	if (children_too) {
+		/* Recurse left child. */
 		if (sc_ll_node_free(node->left, children_too) == SC_E_SUCCESS) {
 			node->left = NULL;
 		}
+
+		/* Recurse right child. */
 		if (sc_ll_node_free(node->right, children_too) == SC_E_SUCCESS) {
 			node->right = NULL;
 		}
 	}
 
 	free(node);
+	--__ctr_alloc;
+
 
 	return SC_E_SUCCESS;
 }
