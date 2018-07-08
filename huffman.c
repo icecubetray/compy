@@ -76,7 +76,7 @@ sc_huffman_process(sc_huffman_t *const restrict context, const void *const restr
 	}
 
 
-	return 0;
+	return SC_E_SUCCESS;
 }
 
 
@@ -284,12 +284,13 @@ sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict
 					break;
 				}
 
+				/* Write a 1/0/? character depending on the direction relative to the node's parent. */
 				if ((node->flags & SC_LL_LEFT) == SC_LL_LEFT) {
 					binbuf[j] = '1';
 				} else if ((node->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
 					binbuf[j] = '0';
 				} else {
-					fputs("?", file);
+					binbuf[j] = '?';
 				}
 
 				node = node->parent;
