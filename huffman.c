@@ -249,7 +249,7 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 
 
 sc_result_t
-sc_huffman_tree_print(sc_huffman_t *context) {
+sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict file) {
 	if (context == NULL) {
 		return SC_E_NULL;
 	}
@@ -260,12 +260,10 @@ sc_huffman_tree_print(sc_huffman_t *context) {
 		*node = NULL;
 
 
-	// TODO: sort by freq
-
 	register unsigned int i, j;
 	for (i = 0; i < 256; ++i) {
 		if (tree_lookup[i] != NULL) {
-			printf("% 3u (% 5u)\t", i, context->frequencies[i]);
+			fprintf(file, "% 3u % 5u\t", i, context->frequencies[i]);
 
 			size_t n = 0;
 			node = tree_lookup[i];
@@ -273,7 +271,7 @@ sc_huffman_tree_print(sc_huffman_t *context) {
 				++n;
 			}
 
-			char binbuf[n + 1];
+			char binbuf[n + 1 + 1];
 
 			node = tree_lookup[i];
 			for (j = n; j--;) {
@@ -291,16 +289,21 @@ sc_huffman_tree_print(sc_huffman_t *context) {
 				} else if ((node->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
 					binbuf[j] = '0';
 				} else {
-					fputs("?", stdout);
+					fputs("?", file);
 				}
 
 				node = node->parent;
 			}
 
-			binbuf[n] = '\0';
-			puts(binbuf);
+			binbuf[n    ] = '\n';
+			binbuf[n + 1] = '\0';
+
+			fputs(binbuf, file);
 		}
 	}
+
+
+	fflush(file);
 
 
 	return SC_E_SUCCESS;

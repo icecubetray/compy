@@ -8,6 +8,8 @@
 
 #include "./linked_list.h"
 
+#include <stdio.h>
+
 
 
 
@@ -28,7 +30,7 @@ extern "C" {
 	sc_result_t sc_huffman_clear(sc_huffman_t *const context);
 	sc_result_t sc_huffman_process(sc_huffman_t *const restrict context, const void *const restrict data, const size_t size);
 	sc_result_t sc_huffman_tree_build(sc_huffman_t *const context);
-	sc_result_t sc_huffman_tree_print(sc_huffman_t *context);
+	sc_result_t sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict file);
 
 #ifdef __cplusplus
 }

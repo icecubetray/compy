@@ -21,6 +21,7 @@
 #define SC_OPTION_DECOMPRESS				'd'
 #define SC_OPTION_INPUT_FILE				'i'
 #define SC_OPTION_OUTPUT_FILE				'o'
+#define SC_OPTION_LOG_FILE					'l'
 
 
 
@@ -35,17 +36,18 @@ typedef enum sc_mode {
 
 
 void
-parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const out_input_file, char **const out_output_file) {
+parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const out_input_file, char **const out_output_file, char **const out_log_file) {
 	const static struct option options_long[] = {
 		{ "help",		no_argument,		NULL, SC_OPTION_HELP		},
 		{ "compress",	no_argument,		NULL, SC_OPTION_COMPRESS	},
 		{ "decompress",	no_argument,		NULL, SC_OPTION_DECOMPRESS	},
 		{ "if",			required_argument,	NULL, SC_OPTION_INPUT_FILE	},
 		{ "of",			required_argument,	NULL, SC_OPTION_OUTPUT_FILE	},
+		{ "log",		required_argument,	NULL, SC_OPTION_LOG_FILE	},
 		{ NULL,			0,					NULL, 0						}
 	};
 
-	const static char options_short[] = "hcdi:o:";
+	const static char options_short[] = "hcdi:o:l:";
 
 
 	/* Reset getopt's parsing index, ya never know. */
@@ -53,7 +55,7 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 
 
 	sc_mode_t mode = SC_MODE_INIT;
-	char *input_file = NULL, *output_file = NULL;
+	char *input_file = NULL, *output_file = NULL, *log_file = NULL;
 
 	int opt_result, opt_index;
 	do {
@@ -73,7 +75,8 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 						"Options:\n"
 						"    -h, --help          Show this help message\n"
 						"    -i, --if=<file>     Specify input file path\n"
-						"    -o, --of=<file>     Specify output file path"
+						"    -o, --of=<file>     Specify output file path\n"
+						"    -l, --log=<file>    Specify log file path"
 					);
 					exit(EXIT_SUCCESS);
 				case SC_OPTION_COMPRESS:
@@ -88,6 +91,9 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 				case SC_OPTION_OUTPUT_FILE:
 					output_file = optarg;
 					break;
+				case SC_OPTION_LOG_FILE:
+					log_file = optarg;
+					break;
 			}
 		}
 	} while (1);
@@ -100,6 +106,7 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 	*out_mode = mode;
 	*out_input_file = input_file;
 	*out_output_file = output_file;
+	*out_log_file = log_file;
 }
 
 
@@ -115,9 +122,9 @@ main(int argc, char *argv[], char *env[]) {
 
 
 	sc_mode_t mode;
-	char *input_file, *output_file, *alloc = NULL;
+	char *input_file, *output_file, *log_file, *alloc = NULL;
 
-	parse_options(argc, argv, &mode, &input_file, &output_file);
+	parse_options(argc, argv, &mode, &input_file, &output_file, &log_file);
 
 
 	if (mode == SC_MODE_INIT) {
@@ -137,6 +144,21 @@ main(int argc, char *argv[], char *env[]) {
 		memcpy(output_file, input_file, iflen);
 		strncpy(output_file + iflen, ".sca\0", 4 + 1);
 	}
+
+	FILE *log_fp = NULL;
+	if (log_file != NULL) {
+		log_fp = fopen(log_file, "w");
+		if (log_fp == NULL) {
+			fputs("Failed to open log file.", stderr);
+			perror("fopen()");
+			exit(EXIT_FAILURE);
+		}
+	}
+#if (DEBUG)
+	else {
+		log_fp = stdout;
+	}
+#endif
 
 
 	FILE *fp = fopen(input_file, "r");
@@ -181,12 +203,12 @@ main(int argc, char *argv[], char *env[]) {
 		return 3;
 	}
 
-#if (DEBUG)
-	if (sc_huffman_tree_print(&huff) != SC_E_SUCCESS) {
-		fputs("Huffman tree print failed.\n", stderr);
-		return 4;
+	if (log_fp != NULL) {
+		if (sc_huffman_tree_print(&huff, log_fp) != SC_E_SUCCESS) {
+			fputs("Huffman tree print failed.\n", stderr);
+			return 4;
+		}
 	}
-#endif
 
 
 
@@ -232,6 +254,12 @@ main(int argc, char *argv[], char *env[]) {
 
 	if (fclose(fp) != 0) {
 		perror("fclose()");
+	}
+
+	if (log_fp != NULL && log_file != NULL) {
+		if (fclose(log_fp) != 0) {
+			perror("fclose()");
+		}
 	}
 
 	if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
