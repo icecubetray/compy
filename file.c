@@ -13,6 +13,7 @@ sc_file_open(sc_file_t *const restrict file, const char *const restrict path, co
 	}
 
 
+	/* Determine file mode: [rw]+ */
 	char modes[2 + 1] = "?+\0";
 	if (truncate) {
 		modes[0] = 'w';
@@ -21,12 +22,14 @@ sc_file_open(sc_file_t *const restrict file, const char *const restrict path, co
 	}
 
 
+	/* Open the file using the specified path, if fopen() fails it'll return NULL */
 	FILE *fp = fopen(path, modes);
 	if (fp == NULL) {
 		return SC_E_IO;
 	}
 
 
+	/* Clear out the file structure, store the file pointer, reset the state. */
 	memset(file, 0, sizeof(*file));
 	file->fp = fp;
 	file->state = SC_FILE_STATE_IDLE;
@@ -43,17 +46,23 @@ sc_file_close(sc_file_t *const file) {
 	}
 
 
+	/* Check if we have bits left to flush. */
 	if (file->last_bits > 0) {
 		if (file->fp == NULL) {
 			return SC_E_IO;
 		}
 
+		/* Fetch the bits that we still need to write, and write them. */
 		uint8_t byte = (uint8_t)(file->last_byte & ((1 << file->last_bits) - 1));
 		if (fwrite(&byte, sizeof(byte), 1, file->fp) != sizeof(byte)) {
 			puts("fwrite() failed to write last byte");
 			return SC_E_IO;
 		}
 
+		/* Since we had a partial write, we have to give a value to the trim byte so we
+		** can determine what bits to read from the last byte.
+		** The trim byte is the fifth byte in the header, which we initially wrote as a
+		** zero to the file. Set it to the number of bits we wrote just now. */
 		fseek(file->fp, 4, SEEK_SET);
 		byte = (uint8_t)file->last_bits;
 		if (fwrite(&byte, sizeof(byte), 1, file->fp) != sizeof(byte)) {
@@ -61,10 +70,12 @@ sc_file_close(sc_file_t *const file) {
 			return SC_E_IO;
 		}
 
+		/* Clear the partial write state. */
 		file->last_bits = file->last_byte = 0;
 	}
 
 
+	/* Close the underlying file, if one is opened. */
 	if (file->fp != NULL) {
 		if (fclose(file->fp) == 0) {
 			file->fp = NULL;
@@ -73,6 +84,8 @@ sc_file_close(sc_file_t *const file) {
 		}
 	}
 
+
+	/* Clear out the file instance, everything went OK. */
 	memset(file, 0, sizeof(*file));
 
 
@@ -82,23 +95,24 @@ sc_file_close(sc_file_t *const file) {
 
 
 
+/*
+** Static, private function to write a binary tree to the filesystem.
+**
+** Starting at the root of the tree, for each non-leaf node it will first
+** recurse on its left child and then recurse on its right child.
+** Upon encountering a non-leaf node it will write a 0 bit, while every
+** leaf node will write a 1 bit followed by the 8 bits of the value the
+** leaf node represents.
+** The writes are done before any recursion is done.
+*/
 void
 static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, sc_ll_node_t *node) {
 	if (node == NULL) {
 		return;
 	}
 
-	if ((node->flags & SC_LL_LEAF) != SC_LL_LEAF) {
-		*byte <<= 1;
-
-		if (++(*index) >= 8) {
-			fwrite(byte, sizeof(*byte), 1, fp);
-			*byte = *index = 0;
-		}
-
-		__wrtree(fp, byte, index, node->left);
-		__wrtree(fp, byte, index, node->right);
-	} else {
+	if ((node->flags & SC_LL_LEAF) == SC_LL_LEAF) {
+		/* Shl by one, append 1. */
 		*byte = ((*byte << 1) | 1);
 
 		if (++(*index) >= 8) {
@@ -106,14 +120,33 @@ static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, sc_ll_node_t *node
 			*byte = *index = 0;
 		}
 
+		/* Temporarily flip index to the number of bits we need to fetch from the node. */
 		*index = (8 - *index);
+
+		/* Byte = bits already in byte pushed to the left, filled up with bits from the node. */
 		*byte = ((*byte << *index) | (node->value & ((1 << *index) - 1)));
 		fwrite(byte, sizeof(*byte), 1, fp);
+
+		/* Set index back to the number of bits currently set to be written. */
 		if ((*index = (8 - *index)) > 0) {
 			*byte = ((node->value >> (8 - *index)) & ((1 << *index) - 1));
 		} else {
 			*byte = 0;
 		}
+	} else {
+		/* A mere shl by one will simulate appending a zero. */
+		*byte <<= 1;
+
+		if (++(*index) >= 8) {
+			fwrite(byte, sizeof(*byte), 1, fp);
+			*byte = *index = 0;
+		}
+
+		/* Recurse on the left child. */
+		__wrtree(fp, byte, index, node->left);
+
+		/* Recurse on the right child. */
+		__wrtree(fp, byte, index, node->right);
 	}
 }
 
@@ -140,6 +173,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	register unsigned int i;
 	sc_file_header_node_t *hnode = NULL;
 
+	/* Check if the mapping is empty, if so populate it. */
 	if ((populated = file->header.populated) == 0) {
 		const sc_ll_node_t
 			*const *const tree_lookup = (const sc_ll_node_t *const *const)context->tree_lookup,
@@ -239,6 +273,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	}
 
 
+	/* Write the tree to the file. */
 	uint8_t byte = 0;
 	unsigned int index = 0;
 	__wrtree(file->fp, &byte, &index, context->tree_root);
@@ -252,6 +287,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	}
 
 
+	/* Keep track of what we're doing with this instance. */
 	file->state = SC_FILE_STATE_WR_HEADER;
 
 
@@ -269,6 +305,10 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 	if (size == 0) {
 		return SC_E_PARAM;
+	}
+
+	if (file->fp == NULL || ferror(file->fp) != 0) {
+		return SC_E_IO;
 	}
 
 	if (file->state != SC_FILE_STATE_WR_HEADER && file->state != SC_FILE_STATE_WR_DATA) {
@@ -377,6 +417,7 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 	file->last_byte = byte;
 
 
+	/* Keep track of what we're doing with this instance. */
 	file->state = SC_FILE_STATE_WR_DATA;
 
 

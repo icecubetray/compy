@@ -45,10 +45,55 @@ typedef struct sc_file {
 extern "C" {
 #endif
 
+	/**
+	 * @brief Opens an archive file for reading and writing, optionally truncating it.
+	 * @param file The file instance to work on.
+	 * @param path The path to the file on the filesystem.
+	 * @param truncate Whether to truncate or not.
+	 * @return
+	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
+	 *		`#SC_E_IO` if opening the file fails
+	 *		`#SC_E_SUCCESS` otherwise
+	 */
 	sc_result_t sc_file_open(sc_file_t *const restrict file, const char *const restrict path, const unsigned int truncate);
+
+	/**
+	 * @brief Closes the given archive file, flushing the last bits when necessary.
+	 * @param file The file instance to work on.
+	 * @return
+	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
+	 *		`#SC_E_IO` when writing or closing fails
+	 *		`#SC_E_SUCCESS` otherwise
+	 */
 	sc_result_t sc_file_close(sc_file_t *const file);
 
+	/**
+	 * @brief Writes the header of the archive file to the filesystem.
+	 * @param file The file instance to work on.
+	 * @param context The huffman structure this file will be using the bit patterns from.
+	 * @return
+	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
+	 *		`#SC_E_IO` if the underlying file is not opened (properly), or if seeking/writing/flushing fails
+	 *		`#SC_E_NOT_READY` if the given huffman structure is not yet ready
+	 *		`#SC_E_STATE` if the file instance if in an invalid state, such as when data is already written
+	 *		`#SC_E_DATA` if determining the bit patterns failed due to apparent lack of data
+	 *		`#SC_E_SUCCESS` otherwise
+	 */
 	sc_result_t sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const restrict context);
+
+	/**
+	 * @brief Writes the input data as bit patterns to the archive file on the filesystem.
+	 * @param file The file instance to work on.
+	 * @param data The input data source.
+	 * @param size The number of bytes to read from the input data source.
+	 * @return
+	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
+	 *		`#SC_E_PARAM` if \p size is zero
+	 *		`#SC_E_IO` if the underlying file is not opened (properly), or if writing/flushing fails
+	 *		`#SC_E_STATE` if the file instance if in an invalid state, such as when the header is not yet written
+	 *		`#SC_E_NOT_READY` if there are no mapped values in the header, such as when the header is not processed properly
+	 *		`#SC_E_SUCCESS` otherwise
+	 */
 	sc_result_t sc_file_write_data(sc_file_t *const restrict file, const void *const restrict data, const size_t size);
 
 #ifdef __cplusplus
