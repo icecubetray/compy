@@ -1,27 +1,18 @@
 I love, among others, sushi, pizza, and pasta.
 
+> But that's irrelevant for this project.
 
-## File format
+Yeah, true.
 
-```
-header
-+ magic: 4 bytes
-+ map_count: 1 byte
-+ map_node: 3-? bytes
-body
-+ data: * bytes
+> Talking to myself.
 
-magic
-0x20 0x16 0x11 0x27
+Don't care.
 
-map_count
-(0x00 - 0xFF)
 
-map_node
-value: 1 byte, (0x00 - 0xFF)
-bit_count: 1 byte, (0x00 - 0xFF)
-data: ((bit_count / 8) + 1) bytes, (0x00 - 0xFF)*
+# school-compressor
+Previously named huffy, prepreviously named compy, now unnamed.
 
-data
-(0x00 - 0xFF)*
-```
+
+## Summary
+Analyzes input data, builds a huffman tree, writes the tree to the filesystem, writes the input data as bit patterns (as determined from the huffman tree) to the filesystem, done.
+File restore is in progress.
