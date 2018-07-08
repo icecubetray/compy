@@ -82,6 +82,41 @@ sc_file_close(sc_file_t *const file) {
 
 
 
+void
+static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, sc_ll_node_t *node) {
+	if (node == NULL) {
+		return;
+	}
+
+	if ((node->flags & SC_LL_LEAF) != SC_LL_LEAF) {
+		*byte <<= 1;
+
+		if (++(*index) >= 8) {
+			fwrite(byte, sizeof(*byte), 1, fp);
+			*byte = *index = 0;
+		}
+
+		__wrtree(fp, byte, index, node->left);
+		__wrtree(fp, byte, index, node->right);
+	} else {
+		*byte = ((*byte << 1) | 1);
+
+		if (++(*index) >= 8) {
+			fwrite(byte, sizeof(*byte), 1, fp);
+			*byte = *index = 0;
+		}
+
+		*index = (8 - *index);
+		*byte = ((*byte << *index) | (node->value & ((1 << *index) - 1)));
+		fwrite(byte, sizeof(*byte), 1, fp);
+		if ((*index = (8 - *index)) > 0) {
+			*byte = ((node->value >> (8 - *index)) & ((1 << *index) - 1));
+		} else {
+			*byte = 0;
+		}
+	}
+}
+
 sc_result_t
 sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const restrict context) {
 	if (file == NULL || context == NULL) {
@@ -184,7 +219,9 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	}
 
 
-	uint8_t buffer[34], *buffptr = buffer;
+	uint8_t
+		buffer[34],
+		*buffptr = buffer;
 
 
 	const static uint8_t magic[4] = { 0x20, 0x16, 0x11, 0x27 };
@@ -196,38 +233,17 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	/* Prepare the placeholder for the number of bits that should be used from the last byte. */
 	*buffptr++ = 0;
 
-	/* Prepare the map count. */
-	*buffptr++ = (uint8_t)(file->header.populated & 0xFF);
-
-
 	/* Write what we prepared to the file. */
 	if (fwrite(buffer, sizeof(uint8_t), (buffptr - buffer), file->fp) != (buffptr - buffer)) {
 		return SC_E_IO;
 	}
 
 
-	/* Write all map nodes. */
-	register size_t nbits, nbytes;
-	for (i = 256; i--;) {
-		hnode = &file->header.map[i];
-
-		if ((nbits = hnode->nbits) > 0) {
-			/* The node's value. */
-			buffer[0] = (uint8_t)(i & 0xFF);
-
-			/* The number of bits used by the node's data. */
-			buffer[1] = (uint8_t)(nbits & 0xFF);
-
-			/* The node's data. */
-			nbytes = ((nbits / 8) + 1);
-			memcpy(&buffer[2], hnode->data, nbytes);
-
-			nbytes += 2;
-			if (fwrite(buffer, 1, nbytes, file->fp) != nbytes) {
-				return SC_E_IO;
-			}
-		}
-	}
+	uint8_t byte = 0;
+	unsigned int index = 0;
+	__wrtree(file->fp, &byte, &index, context->tree_root);
+	file->last_bits = index;
+	file->last_byte = byte;
 
 
 	/* Flush the header. */
