@@ -426,3 +426,148 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 	return SC_E_SUCCESS;
 }
+
+
+
+
+#define SC_DECODE_NODE 0
+#define SC_DECODE_VALUE 1
+#define SC_DECODE_DATA 2
+
+struct sc_file_decode_state {
+	sc_ll_node_t *root;
+	sc_ll_node_t *last_parent;
+	unsigned int state;
+	unsigned int bits_left;
+	uint8_t bits;
+};
+
+void static __process(struct sc_file_decode_state *const state, uint8_t bit);
+
+sc_result_t
+sc_file_load(sc_file_t *file) {
+	// TODO: sanity
+
+
+	rewind(file->fp);
+
+
+	size_t magic_read = 0;
+	uint8_t magic[4];
+
+	size_t trim_read = 0;
+	uint8_t trim = 0;
+
+
+	register unsigned int i, j, end;
+	size_t read;
+	uint8_t buffer[2048], byte;
+
+	struct sc_file_decode_state state;
+	memset(&state, 0, sizeof(state));
+
+	while ((read = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), file->fp)) > 0) {
+		/* Reset cursor and end marker. */
+		i = 0;
+		end = (unsigned int)read;
+
+		/* Ensure we have magic. */
+		for (; magic_read < 4 && i < end; ++i) {
+			magic[magic_read] = buffer[i];
+
+			if (++magic_read == 4) {
+				if (memcmp(magic, __file_magic, sizeof(__file_magic)) != 0) {
+					return SC_E_DATA;
+				}
+			}
+		}
+
+		/* Ensure we have the trim byte. */
+		for (; trim_read < 1 && i < end; ++i, ++trim_read) {
+			trim = buffer[i];
+		}
+
+		/* Read data. */
+		for (; i < end; ++i) {
+			byte = buffer[i];
+
+			j = 8;
+			if (read < sizeof(buffer) && i == (read - 1)) {
+				// last byte
+				j = trim;
+			}
+
+			for (; j--;) {
+				__process(&state, ((byte >> j) & 0x01));
+			}
+		}
+	}
+}
+
+
+void
+static
+__process(struct sc_file_decode_state *const state, uint8_t bit) {
+	if (state->state == SC_DECODE_NODE) {
+		if (bit == 1) {
+			state->state = SC_DECODE_VALUE;
+			state->bits_left = 8;
+			state->bits = 0;
+		} else {
+			if (state->root == NULL) {
+				state->root = sc_ll_node_alloc(0, 0, 0);
+			}
+			if (state->last_parent == NULL) {
+				state->last_parent = state->root;
+			} else {
+				if (state->last_parent->left == NULL) {
+					sc_ll_node_t *node = sc_ll_node_alloc(0, 0, 0);
+					node->parent = state->last_parent;
+					state->last_parent->left = node;
+					state->last_parent = node;
+				} else if (state->last_parent->right == NULL) {
+					sc_ll_node_t *node = sc_ll_node_alloc(0, 0, 0);
+					node->parent = state->last_parent;
+					state->last_parent->right = node;
+					state->last_parent = node;
+				} else {
+					while ((state->last_parent = state->last_parent->parent) != NULL) {
+						if (state->last_parent->left == NULL || state->last_parent->right == NULL) {
+							break;
+						}
+					}
+					if (state->last_parent == state->root) {
+						// all full
+						state->state = SC_DECODE_DATA;
+					}
+				}
+			}
+		}
+	} else if (state->state == SC_DECODE_VALUE) {
+		state->bits |= (bit << --state->bits_left);
+
+		if (state->bits_left == 0) {
+			printf("got byte: %u\n", state->bits);
+
+			sc_ll_node_t *node = sc_ll_node_alloc(0, state->bits, SC_LL_LEAF);
+			if (state->last_parent->left == NULL) {
+				state->last_parent->left = node;
+			} else if (state->last_parent->right == NULL) {
+				state->last_parent->right = node;
+
+				while ((state->last_parent = state->last_parent->parent) != NULL) {
+					if (state->last_parent->left == NULL || state->last_parent->right == NULL) {
+						break;
+					}
+				}
+			} else {
+				fputs("not supposed to get here\n", stderr);
+				abort();
+			}
+
+			state->state = ((state->last_parent == NULL) ? SC_DECODE_DATA : SC_DECODE_NODE);
+		}
+	} else if (state->state == SC_DECODE_DATA) {
+		printf("data bit: %u\n", bit);
+	}
+}

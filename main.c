@@ -161,110 +161,126 @@ main(int argc, char *argv[], char *env[]) {
 #endif
 
 
-	FILE *fp = fopen(input_file, "r");
-	if (fp == NULL) {
-		perror("fopen()");
-		exit(EXIT_FAILURE);
-	}
 
 
-
-
-	uint8_t buffer[2048];
-	int running;
-	size_t r;
-
-
-
-
-	sc_huffman_t huff;
-
-	if (sc_huffman_init(&huff) != SC_E_SUCCESS) {
-		fputs("Huffman context initialization failed.\n", stderr);
-		return 1;
-	}
-
-	rewind(fp);
-	running = 1;
-	do {
-		if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
-			running = 0;
-			break;
+	if (mode == SC_MODE_COMPRESS) {
+		FILE *fp = fopen(input_file, "r");
+		if (fp == NULL) {
+			perror("fopen()");
+			exit(EXIT_FAILURE);
 		}
 
-		if (sc_huffman_process(&huff, buffer, r) != SC_E_SUCCESS) {
-			fputs("Failed to process data.\n", stderr);
-			abort(); // TODO
-		}
-	} while (running == 1);
 
-	if (sc_huffman_tree_build(&huff) != SC_E_SUCCESS) {
-		fputs("Huffman tree build failed.\n", stderr);
-		return 3;
-	}
 
-	if (log_fp != NULL) {
-		if (sc_huffman_tree_print(&huff, log_fp) != SC_E_SUCCESS) {
-			fputs("Huffman tree print failed.\n", stderr);
-			return 4;
-		}
-	}
+
+		uint8_t buffer[2048];
+		int running;
+		size_t r;
 
 
 
 
-	sc_file_t file;
+		sc_huffman_t huff;
 
-	if (sc_file_open(&file, output_file, 1) != SC_E_SUCCESS) {
-		fputs("Failed to open file.\n", stderr);
-		return 5;
-	}
-
-	if (sc_file_write_header(&file, &huff) != SC_E_SUCCESS) {
-		fputs("Failed to write header.\n", stderr);
-		return 6;
-	}
-
-	rewind(fp);
-	running = 1;
-	do {
-		if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
-			running = 0;
-			break;
+		if (sc_huffman_init(&huff) != SC_E_SUCCESS) {
+			fputs("Huffman context initialization failed.\n", stderr);
+			return 1;
 		}
 
-		if (sc_file_write_data(&file, buffer, r) != SC_E_SUCCESS) {
-			fputs("Failed to write data.\n", stderr);
-			abort(); // TODO
+		rewind(fp);
+		running = 1;
+		do {
+			if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
+				running = 0;
+				break;
+			}
+
+			if (sc_huffman_process(&huff, buffer, r) != SC_E_SUCCESS) {
+				fputs("Failed to process data.\n", stderr);
+				abort(); // TODO
+			}
+		} while (running == 1);
+
+		if (sc_huffman_tree_build(&huff) != SC_E_SUCCESS) {
+			fputs("Huffman tree build failed.\n", stderr);
+			return 3;
 		}
-	} while (running == 1);
 
-	if (sc_file_close(&file) != SC_E_SUCCESS) {
-		fputs("failed to close file.\n", stderr);
-		return 8;
-	}
+		if (log_fp != NULL) {
+			if (sc_huffman_tree_print(&huff, log_fp) != SC_E_SUCCESS) {
+				fputs("Huffman tree print failed.\n", stderr);
+				return 4;
+			}
+		}
 
 
 
 
-	if (alloc != NULL) {
-		free(alloc);
-		output_file = alloc = NULL;
-	}
+		sc_file_t file;
 
-	if (fclose(fp) != 0) {
-		perror("fclose()");
-	}
+		if (sc_file_open(&file, output_file, 1) != SC_E_SUCCESS) {
+			fputs("Failed to open file.\n", stderr);
+			return 5;
+		}
 
-	if (log_fp != NULL && log_file != NULL) {
-		if (fclose(log_fp) != 0) {
+		if (sc_file_write_header(&file, &huff) != SC_E_SUCCESS) {
+			fputs("Failed to write header.\n", stderr);
+			return 6;
+		}
+
+		rewind(fp);
+		running = 1;
+		do {
+			if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
+				running = 0;
+				break;
+			}
+
+			if (sc_file_write_data(&file, buffer, r) != SC_E_SUCCESS) {
+				fputs("Failed to write data.\n", stderr);
+				abort(); // TODO
+			}
+		} while (running == 1);
+
+		if (sc_file_close(&file) != SC_E_SUCCESS) {
+			fputs("failed to close file.\n", stderr);
+			return 8;
+		}
+
+
+
+
+		if (alloc != NULL) {
+			free(alloc);
+			output_file = alloc = NULL;
+		}
+
+		if (fclose(fp) != 0) {
 			perror("fclose()");
 		}
-	}
 
-	if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
-		fputs("Huffman context clearing failed.\n", stderr);
-		return 16;
+		if (log_fp != NULL && log_file != NULL) {
+			if (fclose(log_fp) != 0) {
+				perror("fclose()");
+			}
+		}
+
+		if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
+			fputs("Huffman context clearing failed.\n", stderr);
+			return 16;
+		}
+	} else if (mode == SC_MODE_DECOMPRESS) {
+		sc_file_t file;
+
+		if (sc_file_open(&file, input_file, 0) != SC_E_SUCCESS) {
+			fputs("Failed to open file.\n", stderr);
+			return 5;
+		}
+
+		if (sc_file_load(&file) != SC_E_SUCCESS) {
+			fputs("Failed to load file.\n", stderr);
+			return 6;
+		}
 	}
 
 
