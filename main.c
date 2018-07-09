@@ -277,7 +277,13 @@ main(int argc, char *argv[], char *env[]) {
 			return 5;
 		}
 
-		if (sc_file_load(&file) != SC_E_SUCCESS) {
+		FILE *fp_restore = fopen(output_file, "w");
+		if (fp_restore == NULL) {
+			perror("fopen()");
+			exit(EXIT_FAILURE);
+		}
+
+		if (sc_file_restore(&file, fp_restore) != SC_E_SUCCESS) {
 			fputs("Failed to load file.\n", stderr);
 			return 6;
 		}

@@ -96,7 +96,7 @@ extern "C" {
 	 */
 	sc_result_t sc_file_write_data(sc_file_t *const restrict file, const void *const restrict data, const size_t size);
 
-	sc_result_t sc_file_load(sc_file_t *file);
+	sc_result_t sc_file_restore(sc_file_t *file, FILE *fp_restore);
 
 #ifdef __cplusplus
 }

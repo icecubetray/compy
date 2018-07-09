@@ -329,7 +329,7 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 	uint8_t buffer[512];
 
 	register unsigned int
-		i,
+		i, jo,
 		nbits, rbits, wbits,
 		bits = file->last_bits,
 		byte = file->last_byte,
@@ -347,6 +347,15 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 		if ((nbits = node->nbits) == 0) {
 			puts("unmapped byte");
 			abort(); // TODO
+		}
+
+		int jj;
+		for (jj = nbits; jj--;) {
+			printf("%u", ((node->data[0] >> jj) & 0x01));
+			if (++jo == 8) {
+				puts("");
+				jo = 0;
+			}
 		}
 
 
@@ -374,6 +383,9 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 			if (bits > 0) {
 				/* Determine number of bits to fill up with the current value. */
 				wbits = (8 - bits);
+
+				// FIXME: logic is flawed badly: currently reading from LSB to MSB, reiterating over
+				// indexes: aka writing bits already written. Solution would be reading from MSB to LSB
 
 				/* Push the remaining value all the way to the left and add the filler bits
  				** from the current value. */
@@ -435,8 +447,12 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 #define SC_DECODE_DATA 2
 
 struct sc_file_decode_state {
+	FILE *fp;
 	sc_ll_node_t *root;
 	sc_ll_node_t *last_parent;
+	sc_ll_node_t *last_lookup;
+	size_t buffer_index;
+	uint8_t buffer[2048];
 	unsigned int state;
 	unsigned int bits_left;
 	uint8_t bits;
@@ -445,7 +461,7 @@ struct sc_file_decode_state {
 void static __process(struct sc_file_decode_state *const state, uint8_t bit);
 
 sc_result_t
-sc_file_load(sc_file_t *file) {
+sc_file_restore(sc_file_t *file, FILE *fp_restore) {
 	// TODO: sanity
 
 
@@ -465,6 +481,7 @@ sc_file_load(sc_file_t *file) {
 
 	struct sc_file_decode_state state;
 	memset(&state, 0, sizeof(state));
+	state.fp = fp_restore;
 
 	while ((read = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), file->fp)) > 0) {
 		/* Reset cursor and end marker. */
@@ -516,6 +533,7 @@ __process(struct sc_file_decode_state *const state, uint8_t bit) {
 		} else {
 			if (state->root == NULL) {
 				state->root = sc_ll_node_alloc(0, 0, 0);
+				state->last_lookup = state->root;
 			}
 			if (state->last_parent == NULL) {
 				state->last_parent = state->root;
@@ -569,5 +587,25 @@ __process(struct sc_file_decode_state *const state, uint8_t bit) {
 		}
 	} else if (state->state == SC_DECODE_DATA) {
 		printf("data bit: %u\n", bit);
+		if (bit == 1) {
+			state->last_lookup = state->last_lookup->left;
+		} else if (bit == 0) {
+			state->last_lookup = state->last_lookup->right;
+		}
+
+		if ((state->last_lookup->flags & SC_LL_LEAF) == SC_LL_LEAF) {
+			printf("got leaf: %c\n", state->last_lookup->value);
+			state->buffer[state->buffer_index] = state->last_lookup->value;
+			state->last_lookup = state->root;
+
+			if (++state->buffer_index >= sizeof(state->buffer)) {
+				if (fwrite(state->buffer, sizeof(*state->buffer), (sizeof(state->buffer) / sizeof(*state->buffer)), state->fp) != sizeof(state->buffer)) {
+					fputs("fwrite() failed\n", stderr);
+					abort();
+				}
+
+				state->buffer_index = 0;
+			}
+		}
 	}
 }
