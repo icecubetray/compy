@@ -6,6 +6,11 @@
 
 
 
+const static uint8_t __file_magic[4] = { 0x20, 0x16, 0x11, 0x27 };
+
+
+
+
 sc_result_t
 sc_file_open(sc_file_t *const restrict file, const char *const restrict path, const unsigned int truncate) {
 	if (file == NULL || path == NULL) {
@@ -258,11 +263,9 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 		*buffptr = buffer;
 
 
-	const static uint8_t magic[4] = { 0x20, 0x16, 0x11, 0x27 };
-
 	/* Prepare our magic to indicate the file type. */
-	memcpy(buffptr, magic, sizeof(magic));
-	buffptr += sizeof(magic);
+	memcpy(buffptr, __file_magic, sizeof(__file_magic));
+	buffptr += sizeof(__file_magic);
 
 	/* Prepare the placeholder for the number of bits that should be used from the last byte. */
 	*buffptr++ = 0;
