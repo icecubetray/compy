@@ -124,12 +124,12 @@ static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, sc_ll_node_t *node
 		*index = (8 - *index);
 
 		/* Byte = bits already in byte pushed to the left, filled up with bits from the node. */
-		*byte = ((*byte << *index) | (node->value & ((1 << *index) - 1)));
+		*byte = ((*byte << *index) | ((node->value & (((1 << *index) - 1) << (8 - *index))) >> (8 - *index)));
 		fwrite(byte, sizeof(*byte), 1, fp);
 
 		/* Set index back to the number of bits currently set to be written. */
 		if ((*index = (8 - *index)) > 0) {
-			*byte = ((node->value >> (8 - *index)) & ((1 << *index) - 1));
+			*byte = (node->value & ((1 << *index) - 1));
 		} else {
 			*byte = 0;
 		}
