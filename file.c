@@ -330,7 +330,7 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 	register unsigned int
 		i, jo,
-		nbits, rbits, wbits,
+		nbits, rbits, wbits, cbits, fill,
 		bits = file->last_bits,
 		byte = file->last_byte,
 		buffer_index = 0, index;
@@ -349,70 +349,42 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 			abort(); // TODO
 		}
 
-		int jj;
-		for (jj = nbits; jj--;) {
-			printf("%u", ((node->data[0] >> jj) & 0x01));
-			if (++jo == 8) {
-				puts("");
-				jo = 0;
-			}
-		}
-
 
 		index = 0;
-		wbits = 0;
-
-
-		/* Determine how many bits we have to process. */
+		cbits = ~0;
 		rbits = (bits + nbits);
+		fill = 0;
 
-		/* While we have more than or equal to 8 bits remaining. */
 		while (rbits >= 8) {
-			/* Check if we need to flush the buffer, and do so if required. */
-			if (buffer_index >= sizeof(buffer)) {
-				if (fwrite(buffer, 1, buffer_index, file->fp) != buffer_index) {
-					puts("buffer flush fail");
-					abort(); // TODO
-				}
+			wbits = (8 - bits);
+			cbits = ((nbits % 8) - wbits);
 
-				buffer_index = 0;
-			}
-
-			/* If we have some bits left from a previous iteration, first process those bits.
- 			** Otherwise write the full bytes. */
 			if (bits > 0) {
-				/* Determine number of bits to fill up with the current value. */
-				wbits = (8 - bits);
-
-				// FIXME: logic is flawed badly: currently reading from LSB to MSB, reiterating over
-				// indexes: aka writing bits already written. Solution would be reading from MSB to LSB
-
-				/* Push the remaining value all the way to the left and add the filler bits
- 				** from the current value. */
-				byte = ((byte << wbits) | (node->data[index] & ((1 << wbits) - 1)));
-
-				/* Reset bits, we won't be needing these anymore during this iteration. */
+				fill = ((node->data[index] & (((1 << wbits) - 1) << cbits)) >> cbits);
 				bits = 0;
+				nbits -= wbits;
+				byte = ((byte << wbits) | fill);
 			} else {
-				byte = (node->data[index] & ((1 << (8 - wbits)) - 1));
-				byte |= (node->data[++index] & ((1 << wbits) - 1));
+				// TODO
 			}
 
-			/* Write the byte to the buffer. */
-			buffer[buffer_index++] = byte;
+			printf("got byte: %u\n", (uint8_t)byte);
+			buffer[buffer_index] = byte;
+
+
+			if (++buffer_index >= sizeof(buffer)) {
+				buffer_index = 0;
+				if (fwrite(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), file->fp) != sizeof(buffer)) {
+					perror("fwrite()");
+					abort();
+				}
+			}
+
 			rbits -= 8;
 		}
 
-		if (rbits == 0) {
-			byte = bits = 0;
-			continue;
-		}
-
-		nbits = (rbits - bits);
-
-		/* We have some bits left to process, pass them on to the next iteration. */
-		byte = ((byte << nbits) | (node->data[index] & ((1 << nbits) - 1)));
 		bits = rbits;
+		byte = ((byte << nbits) | (node->data[index] & ((1 << nbits) - 1)));
 	}
 
 	if (buffer_index > 0) {
