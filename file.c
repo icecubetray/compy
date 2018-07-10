@@ -491,6 +491,15 @@ sc_file_restore(sc_file_t *file, FILE *fp_restore) {
 			}
 		}
 	}
+
+	if (state.buffer_index > 0) {
+		if (fwrite(state.buffer, sizeof(*state.buffer), state.buffer_index, state.fp) != state.buffer_index) {
+			perror("fwrite()");
+			abort();
+		}
+	}
+
+	return SC_E_SUCCESS;
 }
 
 
