@@ -330,7 +330,7 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 	register unsigned int
 		i, jo,
-		nbits, rbits, wbits, cbits, fill,
+		nbits, rbits, wbits, cbits,
 		bits = file->last_bits,
 		byte = file->last_byte,
 		buffer_index = 0, index;
@@ -350,27 +350,46 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 		}
 
 
-		index = 0;
+		index = ((nbits - 1) / 8);
 		cbits = ~0;
 		rbits = (bits + nbits);
-		fill = 0;
 
 		while (rbits >= 8) {
 			wbits = (8 - bits);
-			cbits = ((nbits % 8) - wbits);
+			cbits = ((nbits - wbits) % 8);
 
 			if (bits > 0) {
-				fill = ((node->data[index] & (((1 << wbits) - 1) << cbits)) >> cbits);
+				if ((cbits + wbits) > 8) {
+					byte <<= wbits;
+					byte |= ((node->data[index] & ((1 << (nbits % 8)) - 1)) << (8 - cbits));
+					byte |= ((node->data[--index] & (((1 << (wbits - (nbits % 8))) - 1) << cbits)) >> cbits);
+				} else {
+					byte = ((byte << wbits) | ((node->data[index] & (((1 << wbits) - 1) << cbits)) >> cbits));
+				}
 				bits = 0;
 				nbits -= wbits;
-				byte = ((byte << wbits) | fill);
+
+				if ((nbits & 7) == 0) {
+					--index;
+				}
+			} else if (nbits >= 8) {
+				if (cbits > 0) {
+					wbits = (8 - cbits);
+					byte = (((node->data[index] & ((1 << cbits) - 1)) << wbits) | ((node->data[--index] & (((1 << wbits) - 1) << cbits)) >> cbits));
+				} else if (wbits == 8) {
+					byte = node->data[index--];
+				} else {
+					byte = 0;
+				}
+				nbits -= 8;
 			} else {
-				// TODO
+				rbits -= 8;
+				break;
 			}
 
-			printf("got byte: %u\n", (uint8_t)byte);
-			buffer[buffer_index] = byte;
 
+			buffer[buffer_index] = (uint8_t)byte;
+			byte = 0;
 
 			if (++buffer_index >= sizeof(buffer)) {
 				buffer_index = 0;
@@ -383,8 +402,12 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 			rbits -= 8;
 		}
 
-		bits = rbits;
-		byte = ((byte << nbits) | (node->data[index] & ((1 << nbits) - 1)));
+		if (rbits > 0) {
+			bits = rbits;
+			byte = ((byte << nbits) | ((node->data[index] & (((1 << nbits) - 1) << 0)) >> 0));
+		} else {
+			bits = byte = 0;
+		}
 	}
 
 	if (buffer_index > 0) {
@@ -481,7 +504,7 @@ sc_file_restore(sc_file_t *file, FILE *fp_restore) {
 			byte = buffer[i];
 
 			j = 8;
-			if (read < sizeof(buffer) && i == (read - 1)) {
+			if (trim > 0 && read < sizeof(buffer) && i == (read - 1)) {
 				// last byte
 				j = trim;
 			}
@@ -546,8 +569,6 @@ __process(struct sc_file_decode_state *const state, uint8_t bit) {
 		state->bits |= (bit << --state->bits_left);
 
 		if (state->bits_left == 0) {
-			printf("got byte: %u\n", state->bits);
-
 			sc_ll_node_t *node = sc_ll_node_alloc(0, state->bits, SC_LL_LEAF);
 			if (state->last_parent->left == NULL) {
 				state->last_parent->left = node;
@@ -567,7 +588,6 @@ __process(struct sc_file_decode_state *const state, uint8_t bit) {
 			state->state = ((state->last_parent == NULL) ? SC_DECODE_DATA : SC_DECODE_NODE);
 		}
 	} else if (state->state == SC_DECODE_DATA) {
-		printf("data bit: %u\n", bit);
 		if (bit == 1) {
 			state->last_lookup = state->last_lookup->left;
 		} else if (bit == 0) {
@@ -575,7 +595,6 @@ __process(struct sc_file_decode_state *const state, uint8_t bit) {
 		}
 
 		if ((state->last_lookup->flags & SC_LL_LEAF) == SC_LL_LEAF) {
-			printf("got leaf: %c\n", state->last_lookup->value);
 			state->buffer[state->buffer_index] = state->last_lookup->value;
 			state->last_lookup = state->root;
 
