@@ -1,0 +1,3 @@
+[submodule "submodules/make-c-template"]
+	path = submodules/make-c-template
+	url = https://github.com/icecubetray/make-c-template.git
