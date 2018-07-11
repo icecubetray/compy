@@ -12,6 +12,12 @@
 
 
 
+#undef restrict
+#define restrict __restrict__
+
+
+
+
 // Quicksortable type.
 typedef size_t sc_qs_t;
 
