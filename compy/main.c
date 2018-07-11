@@ -39,8 +39,9 @@ void
 parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const out_input_file, char **const out_output_file, char **const out_log_file) {
 	const static struct option options_long[] = {
 		{ "help",		no_argument,		NULL, SC_OPTION_HELP		},
-		{ "compress",	required_argument,	NULL, SC_OPTION_COMPRESS	},
-		{ "decompress",	required_argument,	NULL, SC_OPTION_DECOMPRESS	},
+		{ "compress",	no_argument,		NULL, SC_OPTION_COMPRESS	},
+		{ "decompress",	no_argument,		NULL, SC_OPTION_DECOMPRESS	},
+		{ "in",         required_argument,  NULL, SC_OPTION_INPUT_FILE  },
 		{ "out",		required_argument,	NULL, SC_OPTION_OUTPUT_FILE	},
 		{ "log",		required_argument,	NULL, SC_OPTION_LOG_FILE	},
 		{ NULL,			0,					NULL, 0						}
@@ -64,7 +65,7 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 		} else {
 			switch (opt_result) {
 				case SC_OPTION_HELP:
-					printf("Usage: %s <mode> <input_file> [options]\n", argv[0]);
+					printf("Usage: %s <mode> [options]\n", argv[0]);
 					puts(
 						"\n"
 						"Mode:\n"
@@ -73,16 +74,18 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 						"\n"
 						"Options:\n"
 						"    -h, --help          Show this help message\n"
+						"    -i, --in=<file>     Specify input file path\n"
 						"    -o, --out=<file>    Specify output file path\n"
 						"    -l, --log=<file>    Specify log file path"
 					);
 					exit(EXIT_SUCCESS);
 				case SC_OPTION_COMPRESS:
 					mode = SC_MODE_COMPRESS;
-					input_file = optarg;
 					break;
 				case SC_OPTION_DECOMPRESS:
 					mode = SC_MODE_DECOMPRESS;
+					break;
+				case SC_OPTION_INPUT_FILE:
 					input_file = optarg;
 					break;
 				case SC_OPTION_OUTPUT_FILE:
