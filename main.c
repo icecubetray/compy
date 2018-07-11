@@ -248,21 +248,8 @@ main(int argc, char *argv[], char *env[]) {
 		}
 
 
-
-
-		if (alloc != NULL) {
-			free(alloc);
-			output_file = alloc = NULL;
-		}
-
 		if (fclose(fp) != 0) {
 			perror("fclose()");
-		}
-
-		if (log_fp != NULL && log_file != NULL) {
-			if (fclose(log_fp) != 0) {
-				perror("fclose()");
-			}
 		}
 
 		if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
@@ -286,6 +273,30 @@ main(int argc, char *argv[], char *env[]) {
 		if (sc_file_restore(&file, fp_restore) != SC_E_SUCCESS) {
 			fputs("Failed to load file.\n", stderr);
 			return 6;
+		}
+
+		if (sc_file_close(&file) != SC_E_SUCCESS) {
+			fputs("failed to close file.\n", stderr);
+			return 8;
+		}
+
+
+		if (fclose(fp_restore) != 0) {
+			perror("fclose()");
+		}
+	}
+
+
+
+
+	if (alloc != NULL) {
+		free(alloc);
+		output_file = alloc = NULL;
+	}
+
+	if (log_fp != NULL && log_file != NULL) {
+		if (fclose(log_fp) != 0) {
+			perror("fclose()");
 		}
 	}
 

@@ -522,6 +522,10 @@ sc_file_restore(sc_file_t *file, FILE *fp_restore) {
 		}
 	}
 
+	if (state.root != NULL) {
+		sc_ll_node_free(state.root, 1);
+	}
+
 	return SC_E_SUCCESS;
 }
 
