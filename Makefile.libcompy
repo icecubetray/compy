@@ -1,0 +1,13 @@
+bin/libcompy.so: CFLAGS += -DCOMPY_EXPORTING=1
+bin/libcompy.so: $(call getfiles,libcompy)
+	@echo -n "=> $@";
+	@mkdir -p $(@D);
+	@$(CC) -o $@ -shared $^
+	@echo " (done)";
+
+
+pre-libcompy:
+	@echo $(strip $(ECHO_EOL))
+
+
+libcompy: pre-libcompy bin/libcompy.so

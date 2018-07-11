@@ -1,0 +1,14 @@
+libcompy/types.h
+libcompy/tests.h
+libcompy/tests.c
+libcompy/result.h
+libcompy/quicksort.h
+libcompy/quicksort.c
+libcompy/main.c
+libcompy/linked_list.h
+libcompy/linked_list.c
+libcompy/huffman.h
+libcompy/huffman.c
+libcompy/file.h
+libcompy/file.c
+compy/main.c

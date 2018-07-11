@@ -14,7 +14,11 @@ obj/
 !*.sh
 
 # Not these project files.
-!CMakeLists.txt
+!compy.creator
+!compy.includes
+!compy.files
+!Makefile
+!Makefile.*
 
 # Not these repo files.
 !.gitignore

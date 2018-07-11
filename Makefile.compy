@@ -1,0 +1,11 @@
+bin/compy: $(call getfiles,compy/)
+	@echo -n "=> $@";
+	@mkdir -p $(@D);
+	@$(CC) -o $@ $^ $(shell ((test -f bin/libcompy.so && realpath bin/libcompy.so) || echo '-lcompy'));
+	@echo " (done)";
+
+
+pre-compy:
+	@echo $(strip $(ECHO_EOL))
+
+compy: pre-compy bin/compy
