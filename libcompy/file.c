@@ -292,7 +292,9 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	}
 
 
+#if (DEBUG)
 	printf("header end at %lX\n", ftell(file->fp));
+#endif
 
 
 	/* Keep track of what we're doing with this instance. */

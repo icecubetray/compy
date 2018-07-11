@@ -128,18 +128,6 @@ main(int argc, char *argv[], char *env[]) {
 
 
 	if (mode == SC_MODE_INIT) {
-		mode = ((mode == SC_MODE_INIT) ? SC_MODE_COMPRESS : mode);
-		if (mode == SC_MODE_COMPRESS) {
-			input_file = "/home/noot/git/school-compressor/testfiles/small.vec";
-			output_file = "/home/noot/git/school-compressor/testfiles/small.vec.sca";
-		} else if (mode == SC_MODE_DECOMPRESS) {
-			input_file = "/home/noot/git/school-compressor/testfiles/small.vec.sca";
-			output_file = "/home/noot/git/school-compressor/testfiles/small.vec.sca.out";
-		}
-	}
-
-
-	if (mode == SC_MODE_INIT) {
 		fputs("No mode specified.\n", stderr);
 		exit(EXIT_FAILURE);
 	}
