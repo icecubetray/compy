@@ -188,6 +188,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 			nbits,
 			data_idx;
 
+		/* Populate the map based on each set node. */
 		register unsigned int current;
 		for (i = 256, populated = 0; i--;) {
 			if (tree_lookup[i] != NULL) {
@@ -229,6 +230,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 						}
 					}
 
+					/* Move up the tree. */
 					tnode = tnode->parent;
 				}
 
@@ -350,15 +352,28 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 		}
 
 
+		/* The start of the root is at the MSb of the MSB, so the index of the current byte
+		** is set at the last one available which we can calculate using the number of bits we
+		** have for the node. */
 		index = ((nbits - 1) / 8);
+
+		/* When debugging, initialize this to something distinguisable. */
 		cbits = ~0;
+
+		/* Number of bits to be processed. */
 		rbits = (bits + nbits);
 
+		/* Check if we have to process at least one byte (8 bits), and loop so long as we do. */
 		while (rbits >= 8) {
+			/* Determine how many bits we have to fetch from the node. */
 			wbits = (8 - bits);
+
+			/* Determine the 0-index of the bit where we have to start fetching from. */
 			cbits = ((nbits - wbits) % 8);
 
+			/* Check if we have to compensate for the bits left behind by a previous iteration. */
 			if (bits > 0) {
+				/* Check if we have to bridge between bytes, or if we can just use the current byte. */
 				if ((cbits + wbits) > 8) {
 					byte <<= wbits;
 					byte |= ((node->data[index] & ((1 << (nbits % 8)) - 1)) << (8 - cbits));
@@ -366,31 +381,32 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 				} else {
 					byte = ((byte << wbits) | ((node->data[index] & (((1 << wbits) - 1) << cbits)) >> cbits));
 				}
+
 				bits = 0;
 				nbits -= wbits;
 
+				/* Check if we exhausted the current byte of the node. */
 				if ((nbits & 7) == 0) {
 					--index;
 				}
-			} else if (nbits >= 8) {
+			} else {
+				/* Check if we have to bridge between bytes, or if we can just write a full byte. */
 				if (cbits > 0) {
 					wbits = (8 - cbits);
 					byte = (((node->data[index] & ((1 << cbits) - 1)) << wbits) | ((node->data[--index] & (((1 << wbits) - 1) << cbits)) >> cbits));
-				} else if (wbits == 8) {
-					byte = node->data[index--];
 				} else {
-					byte = 0;
+					byte = node->data[index--];
 				}
+
 				nbits -= 8;
-			} else {
-				rbits -= 8;
-				break;
 			}
 
 
+			/* Write out the pattern to the buffer. */
 			buffer[buffer_index] = (uint8_t)byte;
 			byte = 0;
 
+			/* Check if the buffer should flush. */
 			if (++buffer_index >= sizeof(buffer)) {
 				buffer_index = 0;
 				if (fwrite(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), file->fp) != sizeof(buffer)) {
@@ -399,6 +415,7 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 				}
 			}
 
+			/* We have 8 bits less to process. */
 			rbits -= 8;
 		}
 
