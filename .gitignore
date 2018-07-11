@@ -11,6 +11,7 @@ obj/
 # Not these source files.
 !*.c
 !*.h
+!*.sh
 
 # Not these project files.
 !CMakeLists.txt
@@ -18,3 +19,6 @@ obj/
 # Not these repo files.
 !.gitignore
 !*.md
+
+# Not these test files.
+!*.vec
