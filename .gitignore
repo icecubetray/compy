@@ -22,3 +22,6 @@ obj/
 
 # Not these test files.
 !*.vec
+
+# Not these submodules
+!submodules/make-c-template

@@ -263,7 +263,7 @@ sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict
 	register unsigned int i, j;
 	for (i = 0; i < 256; ++i) {
 		if (tree_lookup[i] != NULL) {
-			fprintf(file, "% 3u % 5u\t", i, context->frequencies[i]);
+			fprintf(file, "%3u %6lu\t", i, context->frequencies[i]);
 
 			size_t n = 0;
 			node = tree_lookup[i];

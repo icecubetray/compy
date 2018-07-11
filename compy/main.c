@@ -1,7 +1,7 @@
-#include "./huffman.h"
-#include "./file.h"
+#include <libcompy/huffman.h>
+#include <libcompy/file.h>
 
-#include "./tests.h"
+#include <libcompy/tests.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,10 +39,9 @@ void
 parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const out_input_file, char **const out_output_file, char **const out_log_file) {
 	const static struct option options_long[] = {
 		{ "help",		no_argument,		NULL, SC_OPTION_HELP		},
-		{ "compress",	no_argument,		NULL, SC_OPTION_COMPRESS	},
-		{ "decompress",	no_argument,		NULL, SC_OPTION_DECOMPRESS	},
-		{ "if",			required_argument,	NULL, SC_OPTION_INPUT_FILE	},
-		{ "of",			required_argument,	NULL, SC_OPTION_OUTPUT_FILE	},
+		{ "compress",	required_argument,	NULL, SC_OPTION_COMPRESS	},
+		{ "decompress",	required_argument,	NULL, SC_OPTION_DECOMPRESS	},
+		{ "out",		required_argument,	NULL, SC_OPTION_OUTPUT_FILE	},
 		{ "log",		required_argument,	NULL, SC_OPTION_LOG_FILE	},
 		{ NULL,			0,					NULL, 0						}
 	};
@@ -74,18 +73,16 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 						"\n"
 						"Options:\n"
 						"    -h, --help          Show this help message\n"
-						"    -i, --if=<file>     Specify input file path\n"
-						"    -o, --of=<file>     Specify output file path\n"
+						"    -o, --out=<file>    Specify output file path\n"
 						"    -l, --log=<file>    Specify log file path"
 					);
 					exit(EXIT_SUCCESS);
 				case SC_OPTION_COMPRESS:
 					mode = SC_MODE_COMPRESS;
+					input_file = optarg;
 					break;
 				case SC_OPTION_DECOMPRESS:
 					mode = SC_MODE_DECOMPRESS;
-					break;
-				case SC_OPTION_INPUT_FILE:
 					input_file = optarg;
 					break;
 				case SC_OPTION_OUTPUT_FILE:
@@ -125,6 +122,18 @@ main(int argc, char *argv[], char *env[]) {
 	char *input_file, *output_file, *log_file, *alloc = NULL;
 
 	parse_options(argc, argv, &mode, &input_file, &output_file, &log_file);
+
+
+	if (mode == SC_MODE_INIT) {
+		mode = ((mode == SC_MODE_INIT) ? SC_MODE_COMPRESS : mode);
+		if (mode == SC_MODE_COMPRESS) {
+			input_file = "/home/noot/git/school-compressor/testfiles/small.vec";
+			output_file = "/home/noot/git/school-compressor/testfiles/small.vec.sca";
+		} else if (mode == SC_MODE_DECOMPRESS) {
+			input_file = "/home/noot/git/school-compressor/testfiles/small.vec.sca";
+			output_file = "/home/noot/git/school-compressor/testfiles/small.vec.sca.out";
+		}
+	}
 
 
 	if (mode == SC_MODE_INIT) {

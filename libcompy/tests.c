@@ -8,18 +8,6 @@
 
 
 
-void
-static print_array(const sc_qs_pair_t *const array, const size_t size) {
-	size_t i;
-	for (i = 0; i < size; ++i) {
-		printf("%u\n", array[i].qsvalue);
-	}
-	puts("");
-}
-
-
-
-
 int
 sc_test_quicksort() {
 	sc_qs_pair_t test_data[] = {

@@ -292,6 +292,9 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 	}
 
 
+	printf("header end at %lX\n", ftell(file->fp));
+
+
 	/* Keep track of what we're doing with this instance. */
 	file->state = SC_FILE_STATE_WR_HEADER;
 
@@ -330,8 +333,8 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 	uint8_t buffer[512];
 
-	register unsigned int
-		i, jo,
+	volatile unsigned int
+		i,
 		nbits, rbits, wbits, cbits,
 		bits = file->last_bits,
 		byte = file->last_byte,
@@ -393,7 +396,8 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 				/* Check if we have to bridge between bytes, or if we can just write a full byte. */
 				if (cbits > 0) {
 					wbits = (8 - cbits);
-					byte = (((node->data[index] & ((1 << cbits) - 1)) << wbits) | ((node->data[--index] & (((1 << wbits) - 1) << cbits)) >> cbits));
+					byte = ((node->data[index] & ((1 << cbits) - 1)) << wbits);
+					byte |= ((node->data[--index] & (((1 << wbits) - 1) << cbits)) >> cbits);
 				} else {
 					byte = node->data[index--];
 				}
