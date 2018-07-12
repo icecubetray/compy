@@ -1,5 +1,5 @@
-#ifndef __SC_TESTS_H
-#define __SC_TESTS_H
+#ifndef __COMPY_CORE_TESTS_H
+#define __COMPY_CORE_TESTS_H
 
 
 
@@ -8,9 +8,9 @@
 extern "C" {
 #endif
 
-	int sc_test_quicksort();
+	int compy_test_quicksort();
 
-	int sc_run_tests();
+	int compy_run_tests();
 
 #ifdef __cplusplus
 }

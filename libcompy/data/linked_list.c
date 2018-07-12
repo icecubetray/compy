@@ -11,9 +11,9 @@ static size_t __ctr_alloc = 0;
 
 
 
-sc_ll_node_t*
-sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t flags, sc_ll_node_t *const left, sc_ll_node_t *const right) {
-	sc_ll_node_t *node = (sc_ll_node_t*)malloc(sizeof(*node));
+compy_node_t*
+compy_node_alloc_ex(const compy_qsval_t frequency, const uint8_t value, const uint16_t flags, compy_node_t *const left, compy_node_t *const right) {
+	compy_node_t *node = (compy_node_t*)malloc(sizeof(*node));
 
 	if (node == NULL) {
 		return NULL;
@@ -41,9 +41,9 @@ sc_ll_node_alloc_ex(const sc_qs_t frequency, const uint8_t value, const uint16_t
 }
 
 
-sc_ll_node_t *
-sc_ll_node_alloc(const sc_qs_t frequency, const uint8_t value, const uint16_t flags)  {
-	return sc_ll_node_alloc_ex(
+compy_node_t *
+compy_node_alloc(const compy_qsval_t frequency, const uint8_t value, const uint16_t flags)  {
+	return compy_node_alloc_ex(
 		frequency,
 		value,
 		flags,
@@ -55,21 +55,21 @@ sc_ll_node_alloc(const sc_qs_t frequency, const uint8_t value, const uint16_t fl
 
 
 
-sc_result_t
-sc_ll_node_free(sc_ll_node_t *const node, const unsigned int children_too) {
+compy_result_t
+compy_node_free(compy_node_t *const node, const unsigned int children_too) {
 	if (node == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 
 	if (children_too) {
 		/* Recurse left child. */
-		if (sc_ll_node_free(node->left, children_too) == SC_E_SUCCESS) {
+		if (compy_node_free(node->left, children_too) == COMPY_E_SUCCESS) {
 			node->left = NULL;
 		}
 
 		/* Recurse right child. */
-		if (sc_ll_node_free(node->right, children_too) == SC_E_SUCCESS) {
+		if (compy_node_free(node->right, children_too) == COMPY_E_SUCCESS) {
 			node->right = NULL;
 		}
 	}
@@ -78,5 +78,5 @@ sc_ll_node_free(sc_ll_node_t *const node, const unsigned int children_too) {
 	--__ctr_alloc;
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }

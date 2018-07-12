@@ -1,5 +1,5 @@
-#ifndef __SC_HUFFMAN_H
-#define __SC_HUFFMAN_H
+#ifndef __COMPY_DATA_HUFFMAN_H
+#define __COMPY_DATA_HUFFMAN_H
 
 
 
@@ -14,11 +14,11 @@
 
 
 
-typedef struct sc_huffman {
-	sc_ll_node_t *tree_root;
-	sc_ll_node_t *tree_lookup[256];
-	sc_qs_t frequencies[256];
-} sc_huffman_t;
+typedef struct compy_huffman {
+	compy_node_t *tree_root;
+	compy_node_t *tree_lookup[256];
+	compy_qsval_t frequencies[256];
+} compy_huffman_t;
 
 
 
@@ -31,19 +31,19 @@ extern "C" {
 	 * @brief Initializes the specified huffman structure.
 	 * @param context The huffman structure to initialize.
 	 * @return
-	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
-	 *		`#SC_E_SUCCESS` otherwise
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
-	sc_result_t sc_huffman_init(sc_huffman_t *const context);
+	compy_result_t compy_huffman_init(compy_huffman_t *const context);
 
 	/**
 	 * @brief Clears the specified huffman instance.
 	 * @param context The huffman instance to clear.
 	 * @return
-	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
-	 *		`#SC_E_SUCCESS` otherwise
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
-	sc_result_t sc_huffman_clear(sc_huffman_t *const context);
+	compy_result_t compy_huffman_clear(compy_huffman_t *const context);
 
 	/**
 	 * @brief Processes the specified data on the specified huffman instance in order to determine
@@ -52,32 +52,32 @@ extern "C" {
 	 * @param data The input data source.
 	 * @param size The number of bytes to read from the input source.
 	 * @return
-	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
-	 *		`#SC_E_PARAM` when \p size is zero
-	 *		`#SC_E_LOCKED` if a tree is already built
-	 *		`#SC_E_SUCCESS` otherwise
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_PARAM` when \p size is zero
+	 *		`#COMPY_E_LOCKED` if a tree is already built
+	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
-	sc_result_t sc_huffman_process(sc_huffman_t *const restrict context, const void *const restrict data, const size_t size);
+	compy_result_t compy_huffman_process(compy_huffman_t *const restrict context, const void *const restrict data, const size_t size);
 
 	/**
 	 * @brief Builds a huffman tree for the specified huffman instance.
 	 * @param context The huffman instance to work on.
 	 * @return
-	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
-	 *		`#SC_E_LOCKED` if a tree is already built
-	 *		`#SC_E_SUCCESS` otherwise
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_LOCKED` if a tree is already built
+	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
-	sc_result_t sc_huffman_tree_build(sc_huffman_t *const context);
+	compy_result_t compy_huffman_tree_build(compy_huffman_t *const context);
 
 	/**
 	 * @brief Prints the tree of the specified huffman instance to the given file.
 	 * @param context The huffman instance to work on.
 	 * @param file The output file to write to.
 	 * @return
-	 *		`#SC_E_NULL` when a `NULL` pointer is encountered
-	 *		`#SC_E_SUCCESS` otherwise
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
-	sc_result_t sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict file);
+	compy_result_t compy_huffman_tree_print(compy_huffman_t *const restrict context, FILE *const restrict file);
 
 #ifdef __cplusplus
 }

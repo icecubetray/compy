@@ -9,8 +9,8 @@
 
 
 int
-sc_test_quicksort() {
-	sc_qs_pair_t test_data[] = {
+compy_test_quicksort() {
+	compy_quicksortable_t test_data[] = {
 		{ .qsvalue = 134, .tag = 0 },
 		{ .qsvalue = 3541, .tag = 0 },
 		{ .qsvalue = 123, .tag = 0 },
@@ -23,12 +23,12 @@ sc_test_quicksort() {
 		{ .qsvalue = 5767, .tag = 0 }
 	};
 	const size_t size = (sizeof(test_data) / sizeof(*test_data));
-	sc_qs_pair_t array[size];
+	compy_quicksortable_t array[size];
 
 	int cond_asc;
 	{
 		memcpy(array, test_data, sizeof(test_data));
-		sc_qs_pair_t expect[] = {
+		compy_quicksortable_t expect[] = {
 			{ .qsvalue = 56, .tag = 0 },
 			{ .qsvalue = 76, .tag = 0 },
 			{ .qsvalue = 123, .tag = 0 },
@@ -43,7 +43,7 @@ sc_test_quicksort() {
 
 		const int cond_asc_1 = (memcmp(array, expect, sizeof(array)) != 0);
 		//print_array(array, size);
-		sc_quicksort(array, 0, size, SC_QS_MODE_ASCENDING);
+		compy_quicksort(array, 0, size, COMPY_QS_MODE_ASCENDING);
 		//print_array(array, size);
 		const int cond_asc_2 = (memcmp(array, expect, sizeof(array)) == 0);
 
@@ -53,7 +53,7 @@ sc_test_quicksort() {
 	int cond_desc;
 	{
 		memcpy(array, test_data, sizeof(test_data));
-		sc_qs_pair_t expect[] = {
+		compy_quicksortable_t expect[] = {
 			{ .qsvalue = 45534, .tag = 0 },
 			{ .qsvalue = 5767, .tag = 0 },
 			{ .qsvalue = 3541, .tag = 0 },
@@ -68,7 +68,7 @@ sc_test_quicksort() {
 
 		const int cond_desc_1 = (memcmp(array, expect, sizeof(array)) != 0);
 		//print_array(array, size);
-		sc_quicksort(array, 0, size, SC_QS_MODE_DESCENDING);
+		compy_quicksort(array, 0, size, COMPY_QS_MODE_DESCENDING);
 		//print_array(array, size);
 		const int cond_desc_2 = (memcmp(array, expect, sizeof(array)) == 0);
 
@@ -89,13 +89,13 @@ const char ord_indicators[][3] = {
 };
 
 int
-sc_run_tests() {
+compy_run_tests() {
 	const struct {
 		int(*func)();
 		char name[16];
 	} test_cases[] = {
 		{
-			.func = sc_test_quicksort,
+			.func = compy_test_quicksort,
 			.name = "quicksort"
 		}
 	};

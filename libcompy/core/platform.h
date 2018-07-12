@@ -1,5 +1,5 @@
-#ifndef __SC_PLATFORM_H
-#define __SC_PLATFORM_H
+#ifndef __COMPY_CORE_PLATFORM_H
+#define __COMPY_CORE_PLATFORM_H
 
 
 

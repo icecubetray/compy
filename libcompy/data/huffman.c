@@ -9,62 +9,51 @@
 
 
 
-typedef struct sc_huffman_node sc_huffman_node_t;
-
-struct sc_huffman_node {
-	sc_ll_node_t *node;
-	sc_huffman_node_t *previous;
-	sc_huffman_node_t *next;
-};
-
-
-
-
-sc_result_t
-sc_huffman_init(sc_huffman_t *const context) {
+compy_result_t
+compy_huffman_init(compy_huffman_t *const context) {
 	if (context == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 	memset(context, 0, sizeof(*context));
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
-sc_result_t
-sc_huffman_clear(sc_huffman_t *const context) {
+compy_result_t
+compy_huffman_clear(compy_huffman_t *const context) {
 	if (context == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
-	sc_ll_node_free(context->tree_root, 1);
+	compy_node_free(context->tree_root, 1);
 
 	memset(context, 0, sizeof(*context));
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
 
 
-sc_result_t
-sc_huffman_process(sc_huffman_t *const restrict context, const void *const restrict data, const size_t size) {
+compy_result_t
+compy_huffman_process(compy_huffman_t *const restrict context, const void *const restrict data, const size_t size) {
 	if (context == NULL || data == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 	if (size == 0) {
-		return SC_E_PARAM;
+		return COMPY_E_PARAM;
 	}
 
 	if (context->tree_root != NULL) {
-		return SC_E_LOCKED;
+		return COMPY_E_LOCKED;
 	}
 
 
 	const uint8_t *const data8 = ((const uint8_t *const)data);
-	sc_qs_t *const freqs = context->frequencies;
+	compy_qsval_t *const freqs = context->frequencies;
 
 
 	/* Use the value as an index to a counter registry, and for each value in the provided data increment its
@@ -76,29 +65,29 @@ sc_huffman_process(sc_huffman_t *const restrict context, const void *const restr
 	}
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
 
 
-sc_result_t
-sc_huffman_tree_build(sc_huffman_t *const context) {
+compy_result_t
+compy_huffman_tree_build(compy_huffman_t *const context) {
 	if (context == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 	if (context->tree_root != NULL) {
-		return SC_E_LOCKED;
+		return COMPY_E_LOCKED;
 	}
 
 
 	size_t n = 0;
 	register unsigned int i;
 
-	sc_qs_pair_t freqs_sorted[256], *fqp;
+	compy_quicksortable_t freqs_sorted[256], *fqp;
 	/* Frequency sorting scope. */ {
-		const sc_qs_t *const freqs = context->frequencies;
+		const compy_qsval_t *const freqs = context->frequencies;
 
 		/* Set the tag and sortable value of all pairs according to
  		** the measured frequencies. */
@@ -107,7 +96,7 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 			freqs_sorted[i].qsvalue = freqs[i];
 		}
 
-		sc_quicksort(freqs_sorted, 0, 256, SC_QS_MODE_ASCENDING);
+		compy_quicksort(freqs_sorted, 0, 256, COMPY_QS_MODE_ASCENDING);
 
 		/* Determine the number of workable values. */
 		for (i = 256; i-- && freqs_sorted[i].qsvalue > 0;) {
@@ -115,7 +104,7 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 		}
 	}
 
-	sc_huffman_node_t *scanline = calloc(n, sizeof(*scanline)), *current;
+	compy_linked_node_t *scanline = calloc(n, sizeof(*scanline)), *current;
 	/* Scanline initialization scope. */ {
 		unsigned int scanline_idx = 0;
 		const unsigned int offset = (256 - n);
@@ -133,10 +122,10 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 				current->next = &scanline[scanline_idx + 1];
 			}
 
-			current->node = sc_ll_node_alloc(
+			current->node = compy_node_alloc(
 				fqp->qsvalue,
 				fqp->tag,
-				SC_LL_LEAF
+				COMPY_NODE_LEAF
 			);
 			context->tree_lookup[fqp->tag] = current->node;
 		}
@@ -150,11 +139,11 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 		right_idx = 0,
 		next_idx = 0;
 
-	sc_huffman_node_t
+	compy_linked_node_t
 		*left = NULL,
 		*right = NULL;
 
-	sc_ll_node_t *nonleaf = NULL;
+	compy_node_t *nonleaf = NULL;
 
 	do {
 		/* Fetch two least frequent nodes. */
@@ -182,11 +171,11 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 
 
 		/* Specify direction indicators. */
-		left->node->flags |= SC_LL_LEFT;
-		right->node->flags |= SC_LL_RIGHT;
+		left->node->flags |= COMPY_NODE_LEFT;
+		right->node->flags |= COMPY_NODE_RIGHT;
 
 		/* Allocate the nonleaf node. */
-		nonleaf = sc_ll_node_alloc_ex(
+		nonleaf = compy_node_alloc_ex(
 			(left->node->frequency + right->node->frequency),
 			0,
 			0,
@@ -244,19 +233,19 @@ sc_huffman_tree_build(sc_huffman_t *const context) {
 	context->tree_root = nonleaf;
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
-sc_result_t
-sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict file) {
+compy_result_t
+compy_huffman_tree_print(compy_huffman_t *const restrict context, FILE *const restrict file) {
 	if (context == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 
-	const sc_ll_node_t
-		*const *const tree_lookup = (const sc_ll_node_t *const *const)context->tree_lookup,
+	const compy_node_t
+		*const *const tree_lookup = (const compy_node_t *const *const)context->tree_lookup,
 		*node = NULL;
 
 
@@ -285,9 +274,9 @@ sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict
 				}
 
 				/* Write a 1/0/? character depending on the direction relative to the node's parent. */
-				if ((node->flags & SC_LL_LEFT) == SC_LL_LEFT) {
+				if ((node->flags & COMPY_NODE_LEFT) == COMPY_NODE_LEFT) {
 					binbuf[j] = '1';
-				} else if ((node->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
+				} else if ((node->flags & COMPY_NODE_RIGHT) == COMPY_NODE_RIGHT) {
 					binbuf[j] = '0';
 				} else {
 					binbuf[j] = '?';
@@ -307,5 +296,5 @@ sc_huffman_tree_print(sc_huffman_t *const restrict context, FILE *const restrict
 	fflush(file);
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }

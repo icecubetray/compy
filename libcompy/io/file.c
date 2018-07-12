@@ -11,10 +11,10 @@ const static uint8_t __file_magic[4] = { 0x20, 0x16, 0x11, 0x27 };
 
 
 
-sc_result_t
-sc_file_open(sc_file_t *const restrict file, const char *const restrict path, const unsigned int truncate) {
+compy_result_t
+compy_file_open(compy_file_t *const restrict file, const char *const restrict path, const unsigned int truncate) {
 	if (file == NULL || path == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 
@@ -30,38 +30,38 @@ sc_file_open(sc_file_t *const restrict file, const char *const restrict path, co
 	/* Open the file using the specified path, if fopen() fails it'll return NULL */
 	FILE *fp = fopen(path, modes);
 	if (fp == NULL) {
-		return SC_E_IO;
+		return COMPY_E_IO;
 	}
 
 
 	/* Clear out the file structure, store the file pointer, reset the state. */
 	memset(file, 0, sizeof(*file));
 	file->fp = fp;
-	file->state = SC_FILE_STATE_IDLE;
+	file->state = COMPY_FILE_STATE_IDLE;
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
-sc_result_t
-sc_file_close(sc_file_t *const file) {
+compy_result_t
+compy_file_close(compy_file_t *const file) {
 	if (file == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 
 	/* Check if we have bits left to flush. */
 	if (file->last_bits > 0) {
 		if (file->fp == NULL) {
-			return SC_E_IO;
+			return COMPY_E_IO;
 		}
 
 		/* Fetch the bits that we still need to write, and write them. */
 		uint8_t byte = (uint8_t)(file->last_byte & ((1 << file->last_bits) - 1));
 		if (fwrite(&byte, sizeof(byte), 1, file->fp) != sizeof(byte)) {
 			puts("fwrite() failed to write last byte");
-			return SC_E_IO;
+			return COMPY_E_IO;
 		}
 
 		/* Since we had a partial write, we have to give a value to the trim byte so we
@@ -72,7 +72,7 @@ sc_file_close(sc_file_t *const file) {
 		byte = (uint8_t)file->last_bits;
 		if (fwrite(&byte, sizeof(byte), 1, file->fp) != sizeof(byte)) {
 			puts("fwrite() failed to write trim byte");
-			return SC_E_IO;
+			return COMPY_E_IO;
 		}
 
 		/* Clear the partial write state. */
@@ -85,7 +85,7 @@ sc_file_close(sc_file_t *const file) {
 		if (fclose(file->fp) == 0) {
 			file->fp = NULL;
 		} else {
-			return SC_E_IO;
+			return COMPY_E_IO;
 		}
 	}
 
@@ -94,7 +94,7 @@ sc_file_close(sc_file_t *const file) {
 	memset(file, 0, sizeof(*file));
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
@@ -111,12 +111,12 @@ sc_file_close(sc_file_t *const file) {
 ** The writes are done before any recursion is done.
 */
 void
-static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, sc_ll_node_t *node) {
+static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, compy_node_t *node) {
 	if (node == NULL) {
 		return;
 	}
 
-	if ((node->flags & SC_LL_LEAF) == SC_LL_LEAF) {
+	if ((node->flags & COMPY_NODE_LEAF) == COMPY_NODE_LEAF) {
 		/* Shl by one, append 1. */
 		*byte = ((*byte << 1) | 1);
 
@@ -155,33 +155,33 @@ static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, sc_ll_node_t *node
 	}
 }
 
-sc_result_t
-sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const restrict context) {
+compy_result_t
+compy_file_write_header(compy_file_t *const restrict file, const compy_huffman_t *const restrict context) {
 	if (file == NULL || context == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 	if (file->fp == NULL || ferror(file->fp) != 0) {
-		return SC_E_IO;
+		return COMPY_E_IO;
 	}
 
 	if (context->tree_root == NULL) {
-		return SC_E_NOT_READY;
+		return COMPY_E_NOT_READY;
 	}
 
-	if (file->state != SC_FILE_STATE_IDLE && file->state != SC_FILE_STATE_WR_HEADER) {
-		return SC_E_STATE;
+	if (file->state != COMPY_FILE_STATE_IDLE && file->state != COMPY_FILE_STATE_WR_HEADER) {
+		return COMPY_E_STATE;
 	}
 
 
 	unsigned int populated;
 	register unsigned int i;
-	sc_file_header_node_t *hnode = NULL;
+	compy_file_header_node_t *hnode = NULL;
 
 	/* Check if the mapping is empty, if so populate it. */
 	if ((populated = file->header.populated) == 0) {
-		const sc_ll_node_t
-			*const *const tree_lookup = (const sc_ll_node_t *const *const)context->tree_lookup,
+		const compy_node_t
+			*const *const tree_lookup = (const compy_node_t *const *const)context->tree_lookup,
 			*tnode = NULL;
 
 		size_t
@@ -209,9 +209,9 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 						break;
 					}
 
-					if ((tnode->flags & SC_LL_LEFT) == SC_LL_LEFT) {
+					if ((tnode->flags & COMPY_NODE_LEFT) == COMPY_NODE_LEFT) {
 						current |= (1 << (nbits % 8));
-					} else if ((tnode->flags & SC_LL_RIGHT) == SC_LL_RIGHT) {
+					} else if ((tnode->flags & COMPY_NODE_RIGHT) == COMPY_NODE_RIGHT) {
 						/* NOOP */
 						// current |= 0;
 					} else {
@@ -250,13 +250,13 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 
 	/* Check if everything went okay. */
 	if (populated == 0) {
-		return SC_E_DATA;
+		return COMPY_E_DATA;
 	}
 
 
 	/* Rewind the stream. */
 	if (fseek(file->fp, 0, SEEK_SET) != 0) {
-		return SC_E_IO;
+		return COMPY_E_IO;
 	}
 
 
@@ -274,7 +274,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 
 	/* Write what we prepared to the file. */
 	if (fwrite(buffer, sizeof(uint8_t), (buffptr - buffer), file->fp) != (buffptr - buffer)) {
-		return SC_E_IO;
+		return COMPY_E_IO;
 	}
 
 
@@ -288,7 +288,7 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 
 	/* Flush the header. */
 	if (fflush(file->fp) != 0) {
-		return SC_E_IO;
+		return COMPY_E_IO;
 	}
 
 
@@ -298,39 +298,39 @@ sc_file_write_header(sc_file_t *const restrict file, const sc_huffman_t *const r
 
 
 	/* Keep track of what we're doing with this instance. */
-	file->state = SC_FILE_STATE_WR_HEADER;
+	file->state = COMPY_FILE_STATE_WR_HEADER;
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
 
 
-sc_result_t
-sc_file_write_data(sc_file_t *const restrict file, const void *const restrict data, const size_t size) {
+compy_result_t
+compy_file_write_data(compy_file_t *const restrict file, const void *const restrict data, const size_t size) {
 	if (file == NULL || data == NULL) {
-		return SC_E_NULL;
+		return COMPY_E_NULL;
 	}
 
 	if (size == 0) {
-		return SC_E_PARAM;
+		return COMPY_E_PARAM;
 	}
 
 	if (file->fp == NULL || ferror(file->fp) != 0) {
-		return SC_E_IO;
+		return COMPY_E_IO;
 	}
 
-	if (file->state != SC_FILE_STATE_WR_HEADER && file->state != SC_FILE_STATE_WR_DATA) {
-		return SC_E_STATE;
+	if (file->state != COMPY_FILE_STATE_WR_HEADER && file->state != COMPY_FILE_STATE_WR_DATA) {
+		return COMPY_E_STATE;
 	}
 
 	if (file->header.populated == 0) {
-		return SC_E_NOT_READY;
+		return COMPY_E_NOT_READY;
 	}
 
 
-	const sc_file_header_node_t *node = NULL;
+	const compy_file_header_node_t *node = NULL;
 	const uint8_t *const data8 = (const uint8_t *const)data;
 
 	uint8_t buffer[512];
@@ -436,13 +436,13 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 	if (buffer_index > 0) {
 		if (fwrite(buffer, 1, buffer_index, file->fp) != buffer_index) {
 			puts("fwrite() failed to write full stuff");
-			return SC_E_IO;
+			return COMPY_E_IO;
 		}
 	}
 
 	if (fflush(file->fp) != 0) {
 		puts("fflush() failed");
-		return SC_E_IO;
+		return COMPY_E_IO;
 	}
 
 	/* Save our state for the next call, or final processing. */
@@ -451,24 +451,24 @@ sc_file_write_data(sc_file_t *const restrict file, const void *const restrict da
 
 
 	/* Keep track of what we're doing with this instance. */
-	file->state = SC_FILE_STATE_WR_DATA;
+	file->state = COMPY_FILE_STATE_WR_DATA;
 
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
 
 
-#define SC_DECODE_NODE 0
-#define SC_DECODE_VALUE 1
-#define SC_DECODE_DATA 2
+#define COMPY_DECODE_NODE					0
+#define COMPY_DECODE_VALUE					1
+#define COMPY_DECODE_DATA					2
 
-struct sc_file_decode_state {
+struct compy_file_decode_state {
 	FILE *fp;
-	sc_ll_node_t *root;
-	sc_ll_node_t *last_parent;
-	sc_ll_node_t *last_lookup;
+	compy_node_t *root;
+	compy_node_t *last_parent;
+	compy_node_t *last_lookup;
 	size_t buffer_index;
 	uint8_t buffer[2048];
 	unsigned int state;
@@ -476,11 +476,17 @@ struct sc_file_decode_state {
 	uint8_t bits;
 };
 
-void static __process(struct sc_file_decode_state *const state, uint8_t bit);
+void static __process(struct compy_file_decode_state *const state, uint8_t bit);
 
-sc_result_t
-sc_file_restore(sc_file_t *file, FILE *fp_restore) {
-	// TODO: sanity
+compy_result_t
+compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_restore) {
+	if (file == NULL || fp_restore == NULL) {
+		return COMPY_E_NULL;
+	}
+
+	if (file->fp == NULL || ferror(file->fp) != 0) {
+		return COMPY_E_IO;
+	}
 
 
 	rewind(file->fp);
@@ -497,7 +503,7 @@ sc_file_restore(sc_file_t *file, FILE *fp_restore) {
 	size_t read;
 	uint8_t buffer[2048], byte;
 
-	struct sc_file_decode_state state;
+	struct compy_file_decode_state state;
 	memset(&state, 0, sizeof(state));
 	state.fp = fp_restore;
 
@@ -512,7 +518,7 @@ sc_file_restore(sc_file_t *file, FILE *fp_restore) {
 
 			if (++magic_read == 4) {
 				if (memcmp(magic, __file_magic, sizeof(__file_magic)) != 0) {
-					return SC_E_DATA;
+					return COMPY_E_DATA;
 				}
 			}
 		}
@@ -546,36 +552,36 @@ sc_file_restore(sc_file_t *file, FILE *fp_restore) {
 	}
 
 	if (state.root != NULL) {
-		sc_ll_node_free(state.root, 1);
+		compy_node_free(state.root, 1);
 	}
 
-	return SC_E_SUCCESS;
+	return COMPY_E_SUCCESS;
 }
 
 
 void
 static
-__process(struct sc_file_decode_state *const state, uint8_t bit) {
-	if (state->state == SC_DECODE_NODE) {
+__process(struct compy_file_decode_state *const state, uint8_t bit) {
+	if (state->state == COMPY_DECODE_NODE) {
 		if (bit == 1) {
-			state->state = SC_DECODE_VALUE;
+			state->state = COMPY_DECODE_VALUE;
 			state->bits_left = 8;
 			state->bits = 0;
 		} else {
 			if (state->root == NULL) {
-				state->root = sc_ll_node_alloc(0, 0, 0);
+				state->root = compy_node_alloc(0, 0, 0);
 				state->last_lookup = state->root;
 			}
 			if (state->last_parent == NULL) {
 				state->last_parent = state->root;
 			} else {
 				if (state->last_parent->left == NULL) {
-					sc_ll_node_t *node = sc_ll_node_alloc(0, 0, 0);
+					compy_node_t *node = compy_node_alloc(0, 0, 0);
 					node->parent = state->last_parent;
 					state->last_parent->left = node;
 					state->last_parent = node;
 				} else if (state->last_parent->right == NULL) {
-					sc_ll_node_t *node = sc_ll_node_alloc(0, 0, 0);
+					compy_node_t *node = compy_node_alloc(0, 0, 0);
 					node->parent = state->last_parent;
 					state->last_parent->right = node;
 					state->last_parent = node;
@@ -587,16 +593,16 @@ __process(struct sc_file_decode_state *const state, uint8_t bit) {
 					}
 					if (state->last_parent == state->root) {
 						// all full
-						state->state = SC_DECODE_DATA;
+						state->state = COMPY_DECODE_DATA;
 					}
 				}
 			}
 		}
-	} else if (state->state == SC_DECODE_VALUE) {
+	} else if (state->state == COMPY_DECODE_VALUE) {
 		state->bits |= (bit << --state->bits_left);
 
 		if (state->bits_left == 0) {
-			sc_ll_node_t *node = sc_ll_node_alloc(0, state->bits, SC_LL_LEAF);
+			compy_node_t *node = compy_node_alloc(0, state->bits, COMPY_NODE_LEAF);
 			if (state->last_parent->left == NULL) {
 				state->last_parent->left = node;
 			} else if (state->last_parent->right == NULL) {
@@ -612,16 +618,16 @@ __process(struct sc_file_decode_state *const state, uint8_t bit) {
 				abort();
 			}
 
-			state->state = ((state->last_parent == NULL) ? SC_DECODE_DATA : SC_DECODE_NODE);
+			state->state = ((state->last_parent == NULL) ? COMPY_DECODE_DATA : COMPY_DECODE_NODE);
 		}
-	} else if (state->state == SC_DECODE_DATA) {
+	} else if (state->state == COMPY_DECODE_DATA) {
 		if (bit == 1) {
 			state->last_lookup = state->last_lookup->left;
 		} else if (bit == 0) {
 			state->last_lookup = state->last_lookup->right;
 		}
 
-		if ((state->last_lookup->flags & SC_LL_LEAF) == SC_LL_LEAF) {
+		if ((state->last_lookup->flags & COMPY_NODE_LEAF) == COMPY_NODE_LEAF) {
 			state->buffer[state->buffer_index] = state->last_lookup->value;
 			state->last_lookup = state->root;
 

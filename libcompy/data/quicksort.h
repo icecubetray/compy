@@ -1,27 +1,28 @@
-#ifndef __SC_QUICKSORT_H
-#define __SC_QUICKSORT_H
+#ifndef __COMPY_DATA_QUICKSORT_H
+#define __COMPY_DATA_QUICKSORT_H
 
 
 
 
 #include "../core/platform.h"
 
+#include <stdint.h>
 #include <stddef.h>
 
 
 
 
-typedef enum sc_qs_mode {
-	SC_QS_MODE_ASCENDING = 1,
-	SC_QS_MODE_DESCENDING = 2
-} sc_qs_mode_t;
+typedef enum compy_qs_mode {
+	COMPY_QS_MODE_ASCENDING = 1,
+	COMPY_QS_MODE_DESCENDING = 2
+} compy_qs_mode_t;
 
-typedef size_t sc_qs_t;
+typedef uint64_t compy_qsval_t;
 
-typedef struct sc_qs_pair {
-	sc_qs_t qsvalue;
-	sc_qs_t tag;
-} sc_qs_pair_t;
+typedef struct compy_quicksortable {
+	compy_qsval_t qsvalue;
+	compy_qsval_t tag;
+} compy_quicksortable_t;
 
 
 
@@ -35,9 +36,9 @@ extern "C" {
 	 * @param array The array to sort.
 	 * @param index The index to start at.
 	 * @param size The number of elements to sort.
-	 * @param mode Whether to sort in an ascending manner or descending manner; `#SC_QS_MODE_ASCENDING` or `#SC_QS_MODE_DESCENDING`.
+	 * @param mode Whether to sort in an ascending manner or descending manner; `#COMPY_QS_MODE_ASCENDING` or `#COMPY_QS_MODE_DESCENDING`.
 	 */
-	void sc_quicksort(sc_qs_pair_t *const array, size_t index, const size_t size, const int mode);
+	void compy_quicksort(compy_quicksortable_t *const array, size_t index, const size_t size, const compy_qs_mode_t mode);
 
 #ifdef __cplusplus
 }

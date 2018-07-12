@@ -4,12 +4,13 @@
 
 
 size_t
-static sc_quicksort_find_pivot(sc_qs_pair_t *const array, size_t left, size_t right, const sc_qs_t cmp, const int ascending) {
+static
+__quicksort_find_pivot(compy_quicksortable_t *const array, size_t left, size_t right, const compy_qsval_t cmp, const int ascending) {
 	const size_t right_cpy = right;
 
 	--left;
 
-	sc_qs_pair_t swap;
+	compy_quicksortable_t swap;
 
 	for (;;) {
 		if (ascending) {
@@ -47,9 +48,10 @@ static sc_quicksort_find_pivot(sc_qs_pair_t *const array, size_t left, size_t ri
 
 
 void
-static sc_quicksort_recurse(sc_qs_pair_t *const array, size_t left, size_t right, const int ascending) {
+static
+__quicksort_recurse(compy_quicksortable_t *const array, size_t left, size_t right, const int ascending) {
 	if (left < right) {
-		size_t pivot = sc_quicksort_find_pivot(
+		size_t pivot = __quicksort_find_pivot(
 			array,
 			left,
 			right,
@@ -57,14 +59,14 @@ static sc_quicksort_recurse(sc_qs_pair_t *const array, size_t left, size_t right
 			ascending
 		);
 
-		sc_quicksort_recurse(
+		__quicksort_recurse(
 			array,
 			left,
 			(pivot ? (pivot - 1) : 0),
 			ascending
 		);
 
-		sc_quicksort_recurse(
+		__quicksort_recurse(
 			array,
 			(pivot + 1),
 			right,
@@ -75,11 +77,11 @@ static sc_quicksort_recurse(sc_qs_pair_t *const array, size_t left, size_t right
 
 
 void
-sc_quicksort(sc_qs_pair_t *const array, size_t index, const size_t size, const int mode) {
-	sc_quicksort_recurse(
+compy_quicksort(compy_quicksortable_t *const array, size_t index, const size_t size, const compy_qs_mode_t mode) {
+	__quicksort_recurse(
 		array,
 		index,
 		((index + size) - 1),
-		(mode == SC_QS_MODE_ASCENDING)
+		(mode == COMPY_QS_MODE_ASCENDING)
 	);
 }

@@ -15,21 +15,21 @@
 
 
 
-#define SC_OPTION_HELP						'h'
-#define SC_OPTION_COMPRESS					'c'
-#define SC_OPTION_DECOMPRESS				'd'
-#define SC_OPTION_INPUT_FILE				'i'
-#define SC_OPTION_OUTPUT_FILE				'o'
-#define SC_OPTION_LOG_FILE					'l'
+#define COMPY_OPTION_HELP					'h'
+#define COMPY_OPTION_COMPRESS				'c'
+#define COMPY_OPTION_DECOMPRESS				'd'
+#define COMPY_OPTION_INPUT_FILE				'i'
+#define COMPY_OPTION_OUTPUT_FILE			'o'
+#define COMPY_OPTION_LOG_FILE				'l'
 
 
 
 
-typedef enum sc_mode {
-	SC_MODE_INIT = 0,
-	SC_MODE_COMPRESS = 1,
-	SC_MODE_DECOMPRESS = 2
-} sc_mode_t;
+typedef enum compy_mode {
+	COMPY_MODE_INIT = 0,
+	COMPY_MODE_COMPRESS = 1,
+	COMPY_MODE_DECOMPRESS = 2
+} compy_mode_t;
 
 
 
@@ -76,15 +76,15 @@ exit_usage(const char *const executable, int code, const char *const message) {
 
 void
 static
-parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const out_input_file, char **const out_output_file, char **const out_log_file) {
+parse_options(int argc, char *argv[], compy_mode_t *const out_mode, char **const out_input_file, char **const out_output_file, char **const out_log_file) {
 	const static struct option options_long[] = {
-		{ "help",		no_argument,		NULL, SC_OPTION_HELP		},
-		{ "compress",	no_argument,		NULL, SC_OPTION_COMPRESS	},
-		{ "decompress",	no_argument,		NULL, SC_OPTION_DECOMPRESS	},
-		{ "in",         required_argument,  NULL, SC_OPTION_INPUT_FILE  },
-		{ "out",		required_argument,	NULL, SC_OPTION_OUTPUT_FILE	},
-		{ "log",		required_argument,	NULL, SC_OPTION_LOG_FILE	},
-		{ NULL,			0,					NULL, 0						}
+		{ "help",		no_argument,		NULL, COMPY_OPTION_HELP			},
+		{ "compress",	no_argument,		NULL, COMPY_OPTION_COMPRESS		},
+		{ "decompress",	no_argument,		NULL, COMPY_OPTION_DECOMPRESS	},
+		{ "in",         required_argument,  NULL, COMPY_OPTION_INPUT_FILE	},
+		{ "out",		required_argument,	NULL, COMPY_OPTION_OUTPUT_FILE	},
+		{ "log",		required_argument,	NULL, COMPY_OPTION_LOG_FILE		},
+		{ NULL,			0,					NULL, 0							}
 	};
 
 	const static char options_short[] = "hcdi:o:l:";
@@ -94,7 +94,7 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 	optind = 1;
 
 
-	sc_mode_t mode = SC_MODE_INIT;
+	compy_mode_t mode = COMPY_MODE_INIT;
 	char *input_file = NULL, *output_file = NULL, *log_file = NULL;
 
 	int opt_result, opt_index;
@@ -104,25 +104,25 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 			break;
 		} else {
 			switch (opt_result) {
-				case SC_OPTION_HELP:
+				case COMPY_OPTION_HELP:
 					exit_usage(
 						argv[0],
 						0,
 						NULL
 					);
-				case SC_OPTION_COMPRESS:
-					mode = SC_MODE_COMPRESS;
+				case COMPY_OPTION_COMPRESS:
+					mode = COMPY_MODE_COMPRESS;
 					break;
-				case SC_OPTION_DECOMPRESS:
-					mode = SC_MODE_DECOMPRESS;
+				case COMPY_OPTION_DECOMPRESS:
+					mode = COMPY_MODE_DECOMPRESS;
 					break;
-				case SC_OPTION_INPUT_FILE:
+				case COMPY_OPTION_INPUT_FILE:
 					input_file = optarg;
 					break;
-				case SC_OPTION_OUTPUT_FILE:
+				case COMPY_OPTION_OUTPUT_FILE:
 					output_file = optarg;
 					break;
-				case SC_OPTION_LOG_FILE:
+				case COMPY_OPTION_LOG_FILE:
 					log_file = optarg;
 					break;
 			}
@@ -145,20 +145,20 @@ parse_options(int argc, char *argv[], sc_mode_t *const out_mode, char **const ou
 
 int
 main(int argc, char *argv[], char *env[]) {
-	if (sc_run_tests() != 0) {
+	if (compy_run_tests() != 0) {
 		return 10;
 	}
 
 
 
 
-	sc_mode_t mode;
+	compy_mode_t mode;
 	char *input_file, *output_file, *log_file, *alloc = NULL;
 
 	parse_options(argc, argv, &mode, &input_file, &output_file, &log_file);
 
 
-	if (mode == SC_MODE_INIT) {
+	if (mode == COMPY_MODE_INIT) {
 		exit_usage(
 			argv[0],
 			1,
@@ -201,7 +201,7 @@ main(int argc, char *argv[], char *env[]) {
 
 
 
-	if (mode == SC_MODE_COMPRESS) {
+	if (mode == COMPY_MODE_COMPRESS) {
 		FILE *fp = fopen(input_file, "r");
 		if (fp == NULL) {
 			perror("fopen()");
@@ -218,9 +218,9 @@ main(int argc, char *argv[], char *env[]) {
 
 
 
-		sc_huffman_t huff;
+		compy_huffman_t huff;
 
-		if (sc_huffman_init(&huff) != SC_E_SUCCESS) {
+		if (compy_huffman_init(&huff) != COMPY_E_SUCCESS) {
 			fputs("Huffman context initialization failed.\n", stderr);
 			return 5;
 		}
@@ -233,19 +233,19 @@ main(int argc, char *argv[], char *env[]) {
 				break;
 			}
 
-			if (sc_huffman_process(&huff, buffer, r) != SC_E_SUCCESS) {
+			if (compy_huffman_process(&huff, buffer, r) != COMPY_E_SUCCESS) {
 				fputs("Failed to process data.\n", stderr);
 				abort(); // TODO
 			}
 		} while (running == 1);
 
-		if (sc_huffman_tree_build(&huff) != SC_E_SUCCESS) {
+		if (compy_huffman_tree_build(&huff) != COMPY_E_SUCCESS) {
 			fputs("Huffman tree build failed.\n", stderr);
 			return 6;
 		}
 
 		if (log_fp != NULL) {
-			if (sc_huffman_tree_print(&huff, log_fp) != SC_E_SUCCESS) {
+			if (compy_huffman_tree_print(&huff, log_fp) != COMPY_E_SUCCESS) {
 				fputs("Huffman tree print failed.\n", stderr);
 				return 7;
 			}
@@ -254,14 +254,14 @@ main(int argc, char *argv[], char *env[]) {
 
 
 
-		sc_file_t file;
+		compy_file_t file;
 
-		if (sc_file_open(&file, output_file, 1) != SC_E_SUCCESS) {
+		if (compy_file_open(&file, output_file, 1) != COMPY_E_SUCCESS) {
 			fputs("Failed to open file.\n", stderr);
 			return 8;
 		}
 
-		if (sc_file_write_header(&file, &huff) != SC_E_SUCCESS) {
+		if (compy_file_write_header(&file, &huff) != COMPY_E_SUCCESS) {
 			fputs("Failed to write header.\n", stderr);
 			return 9;
 		}
@@ -274,13 +274,13 @@ main(int argc, char *argv[], char *env[]) {
 				break;
 			}
 
-			if (sc_file_write_data(&file, buffer, r) != SC_E_SUCCESS) {
+			if (compy_file_write_data(&file, buffer, r) != COMPY_E_SUCCESS) {
 				fputs("Failed to write data.\n", stderr);
 				abort(); // TODO
 			}
 		} while (running == 1);
 
-		if (sc_file_close(&file) != SC_E_SUCCESS) {
+		if (compy_file_close(&file) != COMPY_E_SUCCESS) {
 			fputs("failed to close file.\n", stderr);
 			return 10;
 		}
@@ -290,14 +290,14 @@ main(int argc, char *argv[], char *env[]) {
 			perror("fclose()");
 		}
 
-		if (sc_huffman_clear(&huff) != SC_E_SUCCESS) {
+		if (compy_huffman_clear(&huff) != COMPY_E_SUCCESS) {
 			fputs("Huffman context clearing failed.\n", stderr);
 			return 11;
 		}
-	} else if (mode == SC_MODE_DECOMPRESS) {
-		sc_file_t file;
+	} else if (mode == COMPY_MODE_DECOMPRESS) {
+		compy_file_t file;
 
-		if (sc_file_open(&file, input_file, 0) != SC_E_SUCCESS) {
+		if (compy_file_open(&file, input_file, 0) != COMPY_E_SUCCESS) {
 			fputs("Failed to open file.\n", stderr);
 			return 12;
 		}
@@ -308,12 +308,12 @@ main(int argc, char *argv[], char *env[]) {
 			return 13;
 		}
 
-		if (sc_file_restore(&file, fp_restore) != SC_E_SUCCESS) {
+		if (compy_file_restore(&file, fp_restore) != COMPY_E_SUCCESS) {
 			fputs("Failed to load file.\n", stderr);
 			return 14;
 		}
 
-		if (sc_file_close(&file) != SC_E_SUCCESS) {
+		if (compy_file_close(&file) != COMPY_E_SUCCESS) {
 			fputs("failed to close file.\n", stderr);
 			return 15;
 		}
