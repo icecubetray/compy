@@ -1,9 +1,9 @@
 #include "./tests.h"
 
+#include "../data/quicksort.h"
+
 #include <stdio.h>
 #include <string.h>
-
-#include "./quicksort.h"
 
 
 

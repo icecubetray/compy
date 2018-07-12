@@ -1,3 +1,6 @@
 compy
 libcompy
 .
+libcompy/core
+libcompy/data
+libcompy/io

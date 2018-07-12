@@ -4,16 +4,19 @@
 
 
 
-#include "./types.h"
+#include "../core/platform.h"
+
+#include <stddef.h>
 
 
 
 
-#define SC_QS_MODE_ASCENDING				1
-#define SC_QS_MODE_DESCENDING				0
+typedef enum sc_qs_mode {
+	SC_QS_MODE_ASCENDING = 1,
+	SC_QS_MODE_DESCENDING = 2
+} sc_qs_mode_t;
 
-
-
+typedef size_t sc_qs_t;
 
 typedef struct sc_qs_pair {
 	sc_qs_t qsvalue;

@@ -1,3 +1,8 @@
+CFLAGS_EXTRA = -DCOMPY_COLOR=1
+
+
+
+
 bin/compy: $(call getfiles,compy/)
 	@echo -n "=> $@";
 	@mkdir -p $(@D);
@@ -6,6 +11,6 @@ bin/compy: $(call getfiles,compy/)
 
 
 pre-compy:
-	@echo $(strip $(ECHO_EOL))
+	@echo $(SECTION_EOL)
 
 compy: pre-compy bin/compy

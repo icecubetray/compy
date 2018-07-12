@@ -4,9 +4,10 @@
 
 
 
-#include "./types.h"
+#include "../core/platform.h"
+#include "../core/result.h"
 
-#include "./huffman.h"
+#include "../data/huffman.h"
 
 #include <stdio.h>
 

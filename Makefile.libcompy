@@ -7,7 +7,6 @@ bin/libcompy.so: $(call getfiles,libcompy)
 
 
 pre-libcompy:
-	@echo $(strip $(ECHO_EOL))
-
+	@echo $(SECTION_EOL)
 
 libcompy: pre-libcompy bin/libcompy.so
