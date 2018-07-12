@@ -1,5 +1,5 @@
-#ifndef __COMPY_LIBCOMPY_H
-#define __COMPY_LIBCOMPY_H
+#ifndef __LIBCOMPY_LIBCOMPY_H
+#define __LIBCOMPY_LIBCOMPY_H
 
 
 

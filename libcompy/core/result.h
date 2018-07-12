@@ -1,5 +1,5 @@
-#ifndef __COMPY_CORE_RESULT_H
-#define __COMPY_CORE_RESULT_H
+#ifndef __LIBCOMPY_CORE_RESULT_H
+#define __LIBCOMPY_CORE_RESULT_H
 
 
 

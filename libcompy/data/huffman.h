@@ -1,5 +1,5 @@
-#ifndef __COMPY_DATA_HUFFMAN_H
-#define __COMPY_DATA_HUFFMAN_H
+#ifndef __LIBCOMPY_DATA_HUFFMAN_H
+#define __LIBCOMPY_DATA_HUFFMAN_H
 
 
 

@@ -1,5 +1,5 @@
-#ifndef __COMPY_CORE_TESTS_H
-#define __COMPY_CORE_TESTS_H
+#ifndef __LIBCOMPY_CORE_TESTS_H
+#define __LIBCOMPY_CORE_TESTS_H
 
 
 

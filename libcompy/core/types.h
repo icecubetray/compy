@@ -1,5 +1,5 @@
-#ifndef __COMPY_CORE_TYPES_H
-#define __COMPY_CORE_TYPES_H
+#ifndef __LIBCOMPY_CORE_TYPES_H
+#define __LIBCOMPY_CORE_TYPES_H
 
 
 
