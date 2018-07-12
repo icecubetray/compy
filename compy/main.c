@@ -54,7 +54,7 @@ exit_usage(const char *const executable, int code, const char *const message) {
 		);
 	}
 
-	printf("Usage: %s <mode> --in=<file> [options]\n", executable);
+	printf("Usage: %s <mode> [options]\n", executable);
 	puts(
 		"\n"
 		"Mode:\n"
@@ -142,14 +142,14 @@ parse_options(int argc, char *argv[], compy_mode_t *const out_mode, char **const
 
 
 
+int static handle_compress(const char *const input_file, const char *const output_file);
+int static handle_decompress(const char *const input_file, const char *const output_file);
 
 int
 main(int argc, char *argv[], char *env[]) {
 	if (compy_run_tests() != 0) {
 		return 10;
 	}
-
-
 
 
 	compy_mode_t mode;
@@ -174,14 +174,22 @@ main(int argc, char *argv[], char *env[]) {
 		);
 	}
 
-
 	if (output_file == NULL) {
-		const size_t iflen = strlen(input_file);
+		if (mode == COMPY_MODE_COMPRESS) {
+			const size_t iflen = strlen(input_file);
 
-		output_file = alloc = malloc(iflen + 4 + 1);
-		memcpy(output_file, input_file, iflen);
-		strncpy(output_file + iflen, ".sca\0", 4 + 1);
+			output_file = alloc = malloc(iflen + 4 + 1);
+			memcpy(output_file, input_file, iflen);
+			strncpy(output_file + iflen, ".sca\0", 4 + 1);
+		} else {
+			exit_usage(
+				argv[0],
+				3,
+				"No output file specified."
+			);
+		}
 	}
+
 
 	FILE *log_fp = NULL;
 	if (log_file != NULL) {
@@ -199,132 +207,12 @@ main(int argc, char *argv[], char *env[]) {
 #endif
 
 
-
-
+	int result = -1;
 	if (mode == COMPY_MODE_COMPRESS) {
-		FILE *fp = fopen(input_file, "r");
-		if (fp == NULL) {
-			perror("fopen()");
-			return 4;
-		}
-
-
-
-
-		uint8_t buffer[2048];
-		int running;
-		size_t r;
-
-
-
-
-		compy_huffman_t huff;
-
-		if (compy_huffman_init(&huff) != COMPY_E_SUCCESS) {
-			fputs("Huffman context initialization failed.\n", stderr);
-			return 5;
-		}
-
-		rewind(fp);
-		running = 1;
-		do {
-			if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
-				running = 0;
-				break;
-			}
-
-			if (compy_huffman_process(&huff, buffer, r) != COMPY_E_SUCCESS) {
-				fputs("Failed to process data.\n", stderr);
-				abort(); // TODO
-			}
-		} while (running == 1);
-
-		if (compy_huffman_tree_build(&huff) != COMPY_E_SUCCESS) {
-			fputs("Huffman tree build failed.\n", stderr);
-			return 6;
-		}
-
-		if (log_fp != NULL) {
-			if (compy_huffman_tree_print(&huff, log_fp) != COMPY_E_SUCCESS) {
-				fputs("Huffman tree print failed.\n", stderr);
-				return 7;
-			}
-		}
-
-
-
-
-		compy_file_t file;
-
-		if (compy_file_open(&file, output_file, 1) != COMPY_E_SUCCESS) {
-			fputs("Failed to open file.\n", stderr);
-			return 8;
-		}
-
-		if (compy_file_write_header(&file, &huff) != COMPY_E_SUCCESS) {
-			fputs("Failed to write header.\n", stderr);
-			return 9;
-		}
-
-		rewind(fp);
-		running = 1;
-		do {
-			if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
-				running = 0;
-				break;
-			}
-
-			if (compy_file_write_data(&file, buffer, r) != COMPY_E_SUCCESS) {
-				fputs("Failed to write data.\n", stderr);
-				abort(); // TODO
-			}
-		} while (running == 1);
-
-		if (compy_file_close(&file) != COMPY_E_SUCCESS) {
-			fputs("failed to close file.\n", stderr);
-			return 10;
-		}
-
-
-		if (fclose(fp) != 0) {
-			perror("fclose()");
-		}
-
-		if (compy_huffman_clear(&huff) != COMPY_E_SUCCESS) {
-			fputs("Huffman context clearing failed.\n", stderr);
-			return 11;
-		}
+		result = handle_compress(input_file, output_file);
 	} else if (mode == COMPY_MODE_DECOMPRESS) {
-		compy_file_t file;
-
-		if (compy_file_open(&file, input_file, 0) != COMPY_E_SUCCESS) {
-			fputs("Failed to open file.\n", stderr);
-			return 12;
-		}
-
-		FILE *fp_restore = fopen(output_file, "w");
-		if (fp_restore == NULL) {
-			perror("fopen()");
-			return 13;
-		}
-
-		if (compy_file_restore(&file, fp_restore) != COMPY_E_SUCCESS) {
-			fputs("Failed to load file.\n", stderr);
-			return 14;
-		}
-
-		if (compy_file_close(&file) != COMPY_E_SUCCESS) {
-			fputs("failed to close file.\n", stderr);
-			return 15;
-		}
-
-
-		if (fclose(fp_restore) != 0) {
-			perror("fclose()");
-		}
+		result = handle_decompress(input_file, output_file);
 	}
-
-
 
 
 	if (alloc != NULL) {
@@ -339,6 +227,132 @@ main(int argc, char *argv[], char *env[]) {
 	}
 
 
+	return result;
+}
+
+
+
+
+int
+static
+handle_compress(const char *const input_file, const char *const output_file) {
+	FILE *fp = fopen(input_file, "r");
+	if (fp == NULL) {
+		perror("fopen()");
+		return 4;
+	}
+
+
+	uint8_t buffer[2048];
+	int running;
+	size_t r;
+
+
+	compy_huffman_t huff;
+
+	if (compy_huffman_init(&huff) != COMPY_E_SUCCESS) {
+		fputs("Huffman context initialization failed.\n", stderr);
+		return 5;
+	}
+
+	rewind(fp);
+	running = 1;
+	do {
+		if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
+			running = 0;
+			break;
+		}
+
+		if (compy_huffman_process(&huff, buffer, r) != COMPY_E_SUCCESS) {
+			fputs("Failed to process data.\n", stderr);
+			abort(); // TODO
+		}
+	} while (running == 1);
+
+	if (compy_huffman_tree_build(&huff) != COMPY_E_SUCCESS) {
+		fputs("Huffman tree build failed.\n", stderr);
+		return 6;
+	}
+
+
+	compy_file_t file;
+
+	if (compy_file_open(&file, output_file, 1) != COMPY_E_SUCCESS) {
+		fputs("Failed to open file.\n", stderr);
+		return 8;
+	}
+
+	if (compy_file_write_header(&file, &huff) != COMPY_E_SUCCESS) {
+		fputs("Failed to write header.\n", stderr);
+		return 9;
+	}
+
+	rewind(fp);
+	running = 1;
+	do {
+		if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
+			running = 0;
+			break;
+		}
+
+		if (compy_file_write_data(&file, buffer, r) != COMPY_E_SUCCESS) {
+			fputs("Failed to write data.\n", stderr);
+			abort(); // TODO
+		}
+	} while (running == 1);
+
+	if (compy_file_close(&file) != COMPY_E_SUCCESS) {
+		fputs("failed to close file.\n", stderr);
+		return 10;
+	}
+
+
+	if (fclose(fp) != 0) {
+		perror("fclose()");
+	}
+
+	if (compy_huffman_clear(&huff) != COMPY_E_SUCCESS) {
+		fputs("Huffman context clearing failed.\n", stderr);
+		return 11;
+	}
+
+
+	return 0;
+}
+
+
+
+
+int
+static
+handle_decompress(const char *const input_file, const char *const output_file) {
+	compy_file_t file;
+
+	if (compy_file_open(&file, input_file, 0) != COMPY_E_SUCCESS) {
+		fputs("Failed to open file.\n", stderr);
+		return 12;
+	}
+
+	FILE *fp_restore = fopen(output_file, "w");
+	if (fp_restore == NULL) {
+		perror("fopen()");
+		return 13;
+	}
+
+	if (compy_file_restore(&file, fp_restore) != COMPY_E_SUCCESS) {
+		fputs("Failed to load file.\n", stderr);
+		return 14;
+	}
+
+	if (compy_file_close(&file) != COMPY_E_SUCCESS) {
+		fputs("failed to close file.\n", stderr);
+		return 15;
+	}
+
+
+	if (fclose(fp_restore) != 0) {
+		perror("fclose()");
+	}
 
 
 	return 0;
