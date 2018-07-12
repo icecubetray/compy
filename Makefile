@@ -1,10 +1,24 @@
 PROJECTS = libcompy compy
 PROFILE = debug
 
+
+
+
 include .make/base
 
+
+
+
 install: libcompy
-	@echo $(strip $(SECTION_EOL))
+	@echo $(SECTION_EOL)
 	@echo -n "> cp bin/libcompy.so /usr/lib/libcompy.so"
 	@cp bin/libcompy.so /usr/lib/libcompy.so
 	@echo " (done)"
+
+test: compy
+	@testfiles/test.sh simple
+	@testfiles/test.sh bin
+	@testfiles/test.sh small
+	@testfiles/test.sh big
+	@testfiles/test.sh big2
+	@testfiles/test.sh bigbin

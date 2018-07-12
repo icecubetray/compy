@@ -27,9 +27,4 @@ before_script:
   - make clean PROFILE="$PROFILE" CC="$CC" compy
 
 script:
-  - testfiles/test.sh simple
-  - testfiles/test.sh bin
-  - testfiles/test.sh small
-  - testfiles/test.sh big
-  - testfiles/test.sh big2
-  - testfiles/test.sh bigbin
+  - make test
