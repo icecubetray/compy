@@ -13,4 +13,5 @@ bin/compy: $(call getfiles,compy/)
 pre-compy:
 	@echo $(SECTION_EOL)
 
+compy: libcompy
 compy: pre-compy bin/compy
