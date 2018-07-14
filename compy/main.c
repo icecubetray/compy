@@ -39,7 +39,7 @@ typedef enum compy_mode {
 ls_log_level_t
 static
 get_log_level(const unsigned int verbosity) {
-	ls_log_level_t level = (LS_LOG_LEVEL_SEVERE + verbosity);
+	ls_log_level_t level = (LS_LOG_LEVEL_INFO + verbosity);
 
 	if (level == 0 || level > LS_LOG_LEVEL_COUNT) {
 		level = LS_LOG_LEVEL_DEBUG;
@@ -80,7 +80,7 @@ exit_usage(const char *const executable, int code, const char *const message) {
 		"\n"
 		"Options:\n"
 		"    -h, --help          Show this help message\n"
-		"    -v, --verbose       Increase verbosity, repeatable, starts at severe\n"
+		"    -v, --verbose       Increase verbosity, repeatable, starts at info\n"
 		"    -i, --in=<file>     Specify input file path\n"
 		"    -o, --out=<file>    Specify output file path\n"
 		"    -l, --log=<file>    Specify log file path"
