@@ -482,8 +482,6 @@ struct compy_file_decode_state {
 	uint8_t bits;
 };
 
-void static __process(struct compy_file_decode_state *const state, uint8_t bit);
-
 compy_result_t
 compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_restore) {
 	if (file == NULL || fp_restore == NULL) {
@@ -545,7 +543,87 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 			}
 
 			for (; j--;) {
-				__process(&state, ((byte >> j) & 0x01));
+				const uint8_t bit = ((byte >> j) & 0x01);
+
+				if (state.state == COMPY_DECODE_NODE) {
+					if (bit == 1) {
+						state.state = COMPY_DECODE_VALUE;
+						state.bits_left = 8;
+						state.bits = 0;
+					} else {
+						if (state.root == NULL) {
+							state.root = compy_node_alloc(0, 0, 0);
+							state.last_lookup = state.root;
+						}
+						if (state.last_parent == NULL) {
+							state.last_parent = state.root;
+						} else {
+							if (state.last_parent->left == NULL) {
+								compy_node_t *node = compy_node_alloc(0, 0, 0);
+								node->parent = state.last_parent;
+								state.last_parent->left = node;
+								state.last_parent = node;
+							} else if (state.last_parent->right == NULL) {
+								compy_node_t *node = compy_node_alloc(0, 0, 0);
+								node->parent = state.last_parent;
+								state.last_parent->right = node;
+								state.last_parent = node;
+							} else {
+								while ((state.last_parent = state.last_parent->parent) != NULL) {
+									if (state.last_parent->left == NULL || state.last_parent->right == NULL) {
+										break;
+									}
+								}
+								if (state.last_parent == state.root) {
+									// all full
+									state.state = COMPY_DECODE_DATA;
+								}
+							}
+						}
+					}
+				} else if (state.state == COMPY_DECODE_VALUE) {
+					state.bits |= (bit << --state.bits_left);
+
+					if (state.bits_left == 0) {
+						compy_node_t *node = compy_node_alloc(0, state.bits, COMPY_NODE_LEAF);
+						if (state.last_parent->left == NULL) {
+							state.last_parent->left = node;
+						} else if (state.last_parent->right == NULL) {
+							state.last_parent->right = node;
+
+							while ((state.last_parent = state.last_parent->parent) != NULL) {
+								if (state.last_parent->left == NULL || state.last_parent->right == NULL) {
+									break;
+								}
+							}
+						} else {
+							fputs("not supposed to get here\n", stderr);
+							abort();
+						}
+
+						state.state = ((state.last_parent == NULL) ? COMPY_DECODE_DATA : COMPY_DECODE_NODE);
+					}
+				} else if (state.state == COMPY_DECODE_DATA) {
+					if (bit == 1) {
+						state.last_lookup = state.last_lookup->left;
+					} else if (bit == 0) {
+						state.last_lookup = state.last_lookup->right;
+					}
+
+					if ((state.last_lookup->flags & COMPY_NODE_LEAF) == COMPY_NODE_LEAF) {
+						state.buffer[state.buffer_index] = state.last_lookup->value;
+						state.last_lookup = state.root;
+
+						if (++state.buffer_index >= sizeof(state.buffer)) {
+							if (fwrite(state.buffer, sizeof(*state.buffer), (sizeof(state.buffer) / sizeof(*state.buffer)), state.fp) != sizeof(state.buffer)) {
+								fputs("fwrite() failed\n", stderr);
+								abort();
+							}
+
+							state.buffer_index = 0;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -562,89 +640,4 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 	}
 
 	return COMPY_E_SUCCESS;
-}
-
-
-void
-static
-__process(struct compy_file_decode_state *const state, uint8_t bit) {
-	if (state->state == COMPY_DECODE_NODE) {
-		if (bit == 1) {
-			state->state = COMPY_DECODE_VALUE;
-			state->bits_left = 8;
-			state->bits = 0;
-		} else {
-			if (state->root == NULL) {
-				state->root = compy_node_alloc(0, 0, 0);
-				state->last_lookup = state->root;
-			}
-			if (state->last_parent == NULL) {
-				state->last_parent = state->root;
-			} else {
-				if (state->last_parent->left == NULL) {
-					compy_node_t *node = compy_node_alloc(0, 0, 0);
-					node->parent = state->last_parent;
-					state->last_parent->left = node;
-					state->last_parent = node;
-				} else if (state->last_parent->right == NULL) {
-					compy_node_t *node = compy_node_alloc(0, 0, 0);
-					node->parent = state->last_parent;
-					state->last_parent->right = node;
-					state->last_parent = node;
-				} else {
-					while ((state->last_parent = state->last_parent->parent) != NULL) {
-						if (state->last_parent->left == NULL || state->last_parent->right == NULL) {
-							break;
-						}
-					}
-					if (state->last_parent == state->root) {
-						// all full
-						state->state = COMPY_DECODE_DATA;
-					}
-				}
-			}
-		}
-	} else if (state->state == COMPY_DECODE_VALUE) {
-		state->bits |= (bit << --state->bits_left);
-
-		if (state->bits_left == 0) {
-			compy_node_t *node = compy_node_alloc(0, state->bits, COMPY_NODE_LEAF);
-			if (state->last_parent->left == NULL) {
-				state->last_parent->left = node;
-			} else if (state->last_parent->right == NULL) {
-				state->last_parent->right = node;
-
-				while ((state->last_parent = state->last_parent->parent) != NULL) {
-					if (state->last_parent->left == NULL || state->last_parent->right == NULL) {
-						break;
-					}
-				}
-			} else {
-				fputs("not supposed to get here\n", stderr);
-				abort();
-			}
-
-			state->state = ((state->last_parent == NULL) ? COMPY_DECODE_DATA : COMPY_DECODE_NODE);
-		}
-	} else if (state->state == COMPY_DECODE_DATA) {
-		if (bit == 1) {
-			state->last_lookup = state->last_lookup->left;
-		} else if (bit == 0) {
-			state->last_lookup = state->last_lookup->right;
-		}
-
-		if ((state->last_lookup->flags & COMPY_NODE_LEAF) == COMPY_NODE_LEAF) {
-			state->buffer[state->buffer_index] = state->last_lookup->value;
-			state->last_lookup = state->root;
-
-			if (++state->buffer_index >= sizeof(state->buffer)) {
-				if (fwrite(state->buffer, sizeof(*state->buffer), (sizeof(state->buffer) / sizeof(*state->buffer)), state->fp) != sizeof(state->buffer)) {
-					fputs("fwrite() failed\n", stderr);
-					abort();
-				}
-
-				state->buffer_index = 0;
-			}
-		}
-	}
 }
