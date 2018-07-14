@@ -9,6 +9,13 @@ include .make/base
 
 
 
+bin/libserum.so:
+	@$(MAKE) --directory=submodules/serum --no-print-directory PROFILE=$(PROFILE) CC=$(CC) libserum
+	@cp submodules/serum/bin/libserum.so bin/
+
+
+
+
 install: libcompy
 	@echo $(SECTION_EOL)
 	@echo -n "> cp bin/libcompy.so /usr/lib/libcompy.so"

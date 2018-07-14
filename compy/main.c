@@ -1,6 +1,7 @@
 #include <libcompy/libcompy.h>
-
 #include <libcompy/core/tests.h>
+
+#include <libserum/io/log.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +17,7 @@
 
 
 #define COMPY_OPTION_HELP					'h'
+#define COMPY_OPTION_VERBOSE				'v'
 #define COMPY_OPTION_COMPRESS				'c'
 #define COMPY_OPTION_DECOMPRESS				'd'
 #define COMPY_OPTION_INPUT_FILE				'i'
@@ -30,6 +32,21 @@ typedef enum compy_mode {
 	COMPY_MODE_COMPRESS = 1,
 	COMPY_MODE_DECOMPRESS = 2
 } compy_mode_t;
+
+
+
+
+ls_log_level_t
+static
+get_log_level(const unsigned int verbosity) {
+	ls_log_level_t level = (LS_LOG_LEVEL_SEVERE + verbosity);
+
+	if (level == 0 || level > LS_LOG_LEVEL_COUNT) {
+		level = LS_LOG_LEVEL_DEBUG;
+	}
+
+	return level;
+}
 
 
 
@@ -63,6 +80,7 @@ exit_usage(const char *const executable, int code, const char *const message) {
 		"\n"
 		"Options:\n"
 		"    -h, --help          Show this help message\n"
+		"    -v, --verbose       Increase verbosity, repeatable, starts at severe\n"
 		"    -i, --in=<file>     Specify input file path\n"
 		"    -o, --out=<file>    Specify output file path\n"
 		"    -l, --log=<file>    Specify log file path"
@@ -76,9 +94,10 @@ exit_usage(const char *const executable, int code, const char *const message) {
 
 void
 static
-parse_options(int argc, char *argv[], compy_mode_t *const out_mode, char **const out_input_file, char **const out_output_file, char **const out_log_file) {
+parse_options(int argc, char *argv[], ls_log_level_t *const out_log_level, compy_mode_t *const out_mode, char **const out_input_file, char **const out_output_file, char **const out_log_file) {
 	const static struct option options_long[] = {
 		{ "help",		no_argument,		NULL, COMPY_OPTION_HELP			},
+		{ "verbose",	no_argument,		NULL, COMPY_OPTION_VERBOSE		},
 		{ "compress",	no_argument,		NULL, COMPY_OPTION_COMPRESS		},
 		{ "decompress",	no_argument,		NULL, COMPY_OPTION_DECOMPRESS	},
 		{ "in",         required_argument,  NULL, COMPY_OPTION_INPUT_FILE	},
@@ -87,13 +106,14 @@ parse_options(int argc, char *argv[], compy_mode_t *const out_mode, char **const
 		{ NULL,			0,					NULL, 0							}
 	};
 
-	const static char options_short[] = "hcdi:o:l:";
+	const static char options_short[] = "hvcdi:o:l:";
 
 
 	/* Reset getopt's parsing index, ya never know. */
 	optind = 1;
 
 
+	unsigned int verbosity = 0;
 	compy_mode_t mode = COMPY_MODE_INIT;
 	char *input_file = NULL, *output_file = NULL, *log_file = NULL;
 
@@ -110,6 +130,9 @@ parse_options(int argc, char *argv[], compy_mode_t *const out_mode, char **const
 						0,
 						NULL
 					);
+				case COMPY_OPTION_VERBOSE:
+					++verbosity;
+					break;
 				case COMPY_OPTION_COMPRESS:
 					mode = COMPY_MODE_COMPRESS;
 					break;
@@ -134,6 +157,7 @@ parse_options(int argc, char *argv[], compy_mode_t *const out_mode, char **const
 	optind = 1;
 
 
+	*out_log_level = get_log_level(verbosity);
 	*out_mode = mode;
 	*out_input_file = input_file;
 	*out_output_file = output_file;
@@ -142,8 +166,8 @@ parse_options(int argc, char *argv[], compy_mode_t *const out_mode, char **const
 
 
 
-int static handle_compress(const char *const input_file, const char *const output_file);
-int static handle_decompress(const char *const input_file, const char *const output_file);
+int static handle_compress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file);
+int static handle_decompress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file);
 
 int
 main(int argc, char *argv[], char *env[]) {
@@ -152,10 +176,11 @@ main(int argc, char *argv[], char *env[]) {
 	}
 
 
+	ls_log_level_t level;
 	compy_mode_t mode;
 	char *input_file, *output_file, *log_file, *alloc = NULL;
 
-	parse_options(argc, argv, &mode, &input_file, &output_file, &log_file);
+	parse_options(argc, argv, &level, &mode, &input_file, &output_file, &log_file);
 
 
 	if (mode == COMPY_MODE_INIT) {
@@ -191,6 +216,7 @@ main(int argc, char *argv[], char *env[]) {
 	}
 
 
+	ls_log_t logobj, *const log = &logobj;
 	FILE *log_fp = NULL;
 	if (log_file != NULL) {
 		log_fp = fopen(log_file, "w");
@@ -199,19 +225,22 @@ main(int argc, char *argv[], char *env[]) {
 			perror("fopen()");
 			return 3;
 		}
-	}
-#if (DEBUG)
-	else {
+	} else {
 		log_fp = stdout;
 	}
-#endif
+
+
+	if (ls_log_init_ex(log, 0, level, log_fp) != LS_E_SUCCESS) {
+		fputs("Failed to initialize logger.\n", stderr);
+		return 4;
+	}
 
 
 	int result = -1;
 	if (mode == COMPY_MODE_COMPRESS) {
-		result = handle_compress(input_file, output_file);
+		result = handle_compress(log, input_file, output_file);
 	} else if (mode == COMPY_MODE_DECOMPRESS) {
-		result = handle_decompress(input_file, output_file);
+		result = handle_decompress(log, input_file, output_file);
 	}
 
 
@@ -235,7 +264,7 @@ main(int argc, char *argv[], char *env[]) {
 
 int
 static
-handle_compress(const char *const input_file, const char *const output_file) {
+handle_compress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file) {
 	FILE *fp = fopen(input_file, "r");
 	if (fp == NULL) {
 		perror("fopen()");
@@ -325,7 +354,7 @@ handle_compress(const char *const input_file, const char *const output_file) {
 
 int
 static
-handle_decompress(const char *const input_file, const char *const output_file) {
+handle_decompress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file) {
 	compy_file_t file;
 
 	if (compy_file_open(&file, input_file, 0) != COMPY_E_SUCCESS) {

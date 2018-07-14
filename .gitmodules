@@ -1,3 +1,7 @@
 [submodule "submodules/make-c-template"]
 	path = submodules/make-c-template
 	url = https://github.com/icecubetray/make-c-template.git
+[submodule "submodules/serum"]
+	path = submodules/serum
+	url = https://github.com/icecubetray/serum.git
+	branch = rewrite

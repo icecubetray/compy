@@ -3,10 +3,11 @@ CFLAGS_EXTRA = -DCOMPY_COLOR=1
 
 
 
+bin/compy: bin/libserum.so
 bin/compy: $(call getfiles,compy/)
 	@echo -n "=> $@";
 	@mkdir -p $(@D);
-	@$(CC) -o $@ $^ $(shell ((test -f bin/libcompy.so && realpath bin/libcompy.so) || echo '-lcompy'));
+	@$(CC) -o $@ $^ $(shell ((test -f bin/libcompy.so && realpath bin/libcompy.so) || echo '-lcompy')) $(shell ((test -f bin/libserum.so && realpath bin/libserum.so) || echo '-lserum'));
 	@echo " (done)";
 
 
