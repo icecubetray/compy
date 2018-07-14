@@ -21,6 +21,8 @@ before_install:
 install:
   - make clean PROFILE="$PROFILE" CC="$CC" libcompy
   - sudo make install
+  - make --directory=submodules/serum --no-print-directory PROFILE=release libserum
+  - sudo make --directory=submodules/serum --no-print-directory install
 
 
 before_script:
