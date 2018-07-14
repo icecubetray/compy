@@ -29,6 +29,9 @@ typedef struct compy_file_header_node {
 typedef struct compy_file_header {
 	compy_file_header_node_t map[256];
 	unsigned int populated;
+	unsigned int trim_offset;
+	unsigned int tree_offset;
+	unsigned int tree_size;
 } compy_file_header_t;
 
 typedef struct compy_file {

@@ -269,6 +269,9 @@ compy_file_write_header(compy_file_t *const restrict file, const compy_huffman_t
 	memcpy(buffptr, __file_magic, sizeof(__file_magic));
 	buffptr += sizeof(__file_magic);
 
+	/* Mark the trim byte's offset in the file. */
+	file->header.trim_offset = (unsigned int)(buffptr - buffer);
+
 	/* Prepare the placeholder for the number of bits that should be used from the last byte. */
 	*buffptr++ = 0;
 
@@ -278,12 +281,18 @@ compy_file_write_header(compy_file_t *const restrict file, const compy_huffman_t
 	}
 
 
+	/* Mark the tree's offset in the file. */
+	file->header.tree_offset = (unsigned int)(buffptr - buffer);
+
 	/* Write the tree to the file. */
 	uint8_t byte = 0;
 	unsigned int index = 0;
 	__wrtree(file->fp, &byte, &index, context->tree_root);
 	file->last_bits = index;
 	file->last_byte = byte;
+
+	/* Mark the tree's size in the file. */
+	file->header.tree_size = (unsigned int)(((ftell(file->fp) - file->header.tree_offset) * 8) + file->last_bits);
 
 
 	/* Flush the header. */
