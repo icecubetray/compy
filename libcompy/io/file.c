@@ -292,11 +292,6 @@ compy_file_write_header(compy_file_t *const restrict file, const compy_huffman_t
 	}
 
 
-#if (DEBUG)
-	printf("header end at %lX\n", ftell(file->fp));
-#endif
-
-
 	/* Keep track of what we're doing with this instance. */
 	file->state = COMPY_FILE_STATE_WR_HEADER;
 
