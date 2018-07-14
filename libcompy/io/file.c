@@ -491,18 +491,24 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 	uint8_t trim = 0;
 
 
-	register unsigned int i, j, end;
-	size_t read;
-	uint8_t buffer[2048], byte;
+	size_t read, state_buffer_index = 0;
+	uint8_t buffer[2048], state_buffer[2048];
 
-	compy_node_t *state_root = NULL;
-	compy_node_t *state_last_parent = NULL;
-	compy_node_t *state_last_lookup = NULL;
-	size_t state_buffer_index = 0;
-	uint8_t state_buffer[2048];
-	unsigned int state_state = 0;
-	unsigned int state_bits_left = 0;
-	uint8_t state_bits = 0;
+	compy_node_t
+		*state_root = NULL,
+		*state_last_parent = NULL,
+		*state_last_lookup = NULL;
+
+#if (DEBUG)
+	/* When debugging, ensure variables aren't optimized out. */
+	//volatile
+#endif
+	register unsigned int
+		i, j, end,
+		bit, byte,
+		state_state = 0,
+		state_bits = 0,
+		state_bits_left = 0;
 
 	while ((read = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), file->fp)) > 0) {
 		/* Reset cursor and end marker. */
@@ -536,7 +542,7 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 			}
 
 			for (; j--;) {
-				const uint8_t bit = ((byte >> j) & 0x01);
+				bit = ((byte >> j) & 0x01);
 
 				if (state_state == COMPY_DECODE_NODE) {
 					if (bit == 1) {
