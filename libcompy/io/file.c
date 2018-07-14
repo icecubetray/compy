@@ -111,18 +111,15 @@ compy_file_close(compy_file_t *const file) {
 ** The writes are done before any recursion is done.
 */
 void
-static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, compy_node_t *node) {
-	if (node == NULL) {
-		return;
-	}
-
+static
+__wrtree(FILE *const restrict fp, uint8_t *const restrict byte, unsigned int *const restrict index, compy_node_t *const restrict node) {
 	if ((node->flags & COMPY_NODE_LEAF) == COMPY_NODE_LEAF) {
 		/* Shl by one, append 1. */
 		*byte = ((*byte << 1) | 1);
 
 		if (++(*index) >= 8) {
 			fwrite(byte, sizeof(*byte), 1, fp);
-			*byte = *index = 0;
+			*index = 0;
 		}
 
 		/* Temporarily flip index to the number of bits we need to fetch from the node. */
@@ -135,8 +132,6 @@ static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, compy_node_t *node
 		/* Set index back to the number of bits currently set to be written. */
 		if ((*index = (8 - *index)) > 0) {
 			*byte = (node->value & ((1 << *index) - 1));
-		} else {
-			*byte = 0;
 		}
 	} else {
 		/* A mere shl by one will simulate appending a zero. */
@@ -144,14 +139,18 @@ static __wrtree(FILE *fp, uint8_t *byte, unsigned int *index, compy_node_t *node
 
 		if (++(*index) >= 8) {
 			fwrite(byte, sizeof(*byte), 1, fp);
-			*byte = *index = 0;
+			*index = 0;
 		}
 
 		/* Recurse on the left child. */
-		__wrtree(fp, byte, index, node->left);
+		if (node->left != NULL) {
+			__wrtree(fp, byte, index, node->left);
+		}
 
 		/* Recurse on the right child. */
-		__wrtree(fp, byte, index, node->right);
+		if (node->right != NULL) {
+			__wrtree(fp, byte, index, node->right);
+		}
 	}
 }
 
