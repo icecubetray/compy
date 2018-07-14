@@ -470,18 +470,6 @@ compy_file_write_data(compy_file_t *const restrict file, const void *const restr
 #define COMPY_DECODE_VALUE					1
 #define COMPY_DECODE_DATA					2
 
-struct compy_file_decode_state {
-	FILE *fp;
-	compy_node_t *root;
-	compy_node_t *last_parent;
-	compy_node_t *last_lookup;
-	size_t buffer_index;
-	uint8_t buffer[2048];
-	unsigned int state;
-	unsigned int bits_left;
-	uint8_t bits;
-};
-
 compy_result_t
 compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_restore) {
 	if (file == NULL || fp_restore == NULL) {
@@ -507,9 +495,14 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 	size_t read;
 	uint8_t buffer[2048], byte;
 
-	struct compy_file_decode_state state;
-	memset(&state, 0, sizeof(state));
-	state.fp = fp_restore;
+	compy_node_t *state_root = NULL;
+	compy_node_t *state_last_parent = NULL;
+	compy_node_t *state_last_lookup = NULL;
+	size_t state_buffer_index = 0;
+	uint8_t state_buffer[2048];
+	unsigned int state_state = 0;
+	unsigned int state_bits_left = 0;
+	uint8_t state_bits = 0;
 
 	while ((read = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), file->fp)) > 0) {
 		/* Reset cursor and end marker. */
@@ -545,54 +538,54 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 			for (; j--;) {
 				const uint8_t bit = ((byte >> j) & 0x01);
 
-				if (state.state == COMPY_DECODE_NODE) {
+				if (state_state == COMPY_DECODE_NODE) {
 					if (bit == 1) {
-						state.state = COMPY_DECODE_VALUE;
-						state.bits_left = 8;
-						state.bits = 0;
+						state_state = COMPY_DECODE_VALUE;
+						state_bits_left = 8;
+						state_bits = 0;
 					} else {
-						if (state.root == NULL) {
-							state.root = compy_node_alloc(0, 0, 0);
-							state.last_lookup = state.root;
+						if (state_root == NULL) {
+							state_root = compy_node_alloc(0, 0, 0);
+							state_last_lookup = state_root;
 						}
-						if (state.last_parent == NULL) {
-							state.last_parent = state.root;
+						if (state_last_parent == NULL) {
+							state_last_parent = state_root;
 						} else {
-							if (state.last_parent->left == NULL) {
+							if (state_last_parent->left == NULL) {
 								compy_node_t *node = compy_node_alloc(0, 0, 0);
-								node->parent = state.last_parent;
-								state.last_parent->left = node;
-								state.last_parent = node;
-							} else if (state.last_parent->right == NULL) {
+								node->parent = state_last_parent;
+								state_last_parent->left = node;
+								state_last_parent = node;
+							} else if (state_last_parent->right == NULL) {
 								compy_node_t *node = compy_node_alloc(0, 0, 0);
-								node->parent = state.last_parent;
-								state.last_parent->right = node;
-								state.last_parent = node;
+								node->parent = state_last_parent;
+								state_last_parent->right = node;
+								state_last_parent = node;
 							} else {
-								while ((state.last_parent = state.last_parent->parent) != NULL) {
-									if (state.last_parent->left == NULL || state.last_parent->right == NULL) {
+								while ((state_last_parent = state_last_parent->parent) != NULL) {
+									if (state_last_parent->left == NULL || state_last_parent->right == NULL) {
 										break;
 									}
 								}
-								if (state.last_parent == state.root) {
+								if (state_last_parent == state_root) {
 									// all full
-									state.state = COMPY_DECODE_DATA;
+									state_state = COMPY_DECODE_DATA;
 								}
 							}
 						}
 					}
-				} else if (state.state == COMPY_DECODE_VALUE) {
-					state.bits |= (bit << --state.bits_left);
+				} else if (state_state == COMPY_DECODE_VALUE) {
+					state_bits |= (bit << --state_bits_left);
 
-					if (state.bits_left == 0) {
-						compy_node_t *node = compy_node_alloc(0, state.bits, COMPY_NODE_LEAF);
-						if (state.last_parent->left == NULL) {
-							state.last_parent->left = node;
-						} else if (state.last_parent->right == NULL) {
-							state.last_parent->right = node;
+					if (state_bits_left == 0) {
+						compy_node_t *node = compy_node_alloc(0, state_bits, COMPY_NODE_LEAF);
+						if (state_last_parent->left == NULL) {
+							state_last_parent->left = node;
+						} else if (state_last_parent->right == NULL) {
+							state_last_parent->right = node;
 
-							while ((state.last_parent = state.last_parent->parent) != NULL) {
-								if (state.last_parent->left == NULL || state.last_parent->right == NULL) {
+							while ((state_last_parent = state_last_parent->parent) != NULL) {
+								if (state_last_parent->left == NULL || state_last_parent->right == NULL) {
 									break;
 								}
 							}
@@ -601,26 +594,26 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 							abort();
 						}
 
-						state.state = ((state.last_parent == NULL) ? COMPY_DECODE_DATA : COMPY_DECODE_NODE);
+						state_state = ((state_last_parent == NULL) ? COMPY_DECODE_DATA : COMPY_DECODE_NODE);
 					}
-				} else if (state.state == COMPY_DECODE_DATA) {
+				} else if (state_state == COMPY_DECODE_DATA) {
 					if (bit == 1) {
-						state.last_lookup = state.last_lookup->left;
+						state_last_lookup = state_last_lookup->left;
 					} else if (bit == 0) {
-						state.last_lookup = state.last_lookup->right;
+						state_last_lookup = state_last_lookup->right;
 					}
 
-					if ((state.last_lookup->flags & COMPY_NODE_LEAF) == COMPY_NODE_LEAF) {
-						state.buffer[state.buffer_index] = state.last_lookup->value;
-						state.last_lookup = state.root;
+					if ((state_last_lookup->flags & COMPY_NODE_LEAF) == COMPY_NODE_LEAF) {
+						state_buffer[state_buffer_index] = state_last_lookup->value;
+						state_last_lookup = state_root;
 
-						if (++state.buffer_index >= sizeof(state.buffer)) {
-							if (fwrite(state.buffer, sizeof(*state.buffer), (sizeof(state.buffer) / sizeof(*state.buffer)), state.fp) != sizeof(state.buffer)) {
+						if (++state_buffer_index >= sizeof(state_buffer)) {
+							if (fwrite(state_buffer, sizeof(*state_buffer), (sizeof(state_buffer) / sizeof(*state_buffer)), fp_restore) != sizeof(state_buffer)) {
 								fputs("fwrite() failed\n", stderr);
 								abort();
 							}
 
-							state.buffer_index = 0;
+							state_buffer_index = 0;
 						}
 					}
 				}
@@ -628,15 +621,15 @@ compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_re
 		}
 	}
 
-	if (state.buffer_index > 0) {
-		if (fwrite(state.buffer, sizeof(*state.buffer), state.buffer_index, state.fp) != state.buffer_index) {
+	if (state_buffer_index > 0) {
+		if (fwrite(state_buffer, sizeof(*state_buffer), state_buffer_index, fp_restore) != state_buffer_index) {
 			perror("fwrite()");
 			abort();
 		}
 	}
 
-	if (state.root != NULL) {
-		compy_node_free(state.root, 1);
+	if (state_root != NULL) {
+		compy_node_free(state_root, 1);
 	}
 
 	return COMPY_E_SUCCESS;
