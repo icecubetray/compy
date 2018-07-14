@@ -1,4 +1,4 @@
-CFLAGS_EXTRA = -DCOMPY_COLOR=1
+CFLAGS_EXTRA = -DCOMPY_COLOR=1 -Isubmodules/serum
 
 
 
