@@ -18,10 +18,5 @@ install: libcompy
 test: compy
 	@echo $(SECTION_EOL)
 	@echo Running tests...
-	@testfiles/test.sh simple
-	@testfiles/test.sh bin
-	@testfiles/test.sh small
-	@testfiles/test.sh big
-	@testfiles/test.sh big2
-	@testfiles/test.sh bigbin
+	@test/all.sh
 	@echo Done!
