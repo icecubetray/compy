@@ -10,7 +10,7 @@ include .make/base
 
 
 bin/libserum.so:
-	@$(MAKE) --directory=submodules/serum --no-print-directory PROFILE=$(PROFILE) CC=$(CC) libserum
+	@$(MAKE) --directory=submodules/serum --no-print-directory PROFILE=release CC=$(CC) libserum
 	@cp submodules/serum/bin/libserum.so bin/
 
 
