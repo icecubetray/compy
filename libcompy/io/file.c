@@ -335,23 +335,27 @@ compy_file_write_data(compy_file_t *const restrict file, const void *const restr
 
 	uint8_t buffer[512];
 
-	volatile unsigned int
-		i,
-		nbits, rbits, wbits, cbits,
+#if (DEBUG)
+	/* When debugging, ensure variables aren't optimized out. */
+	volatile
+#endif
+	register unsigned int
+		data_index,
+		bits_left,
+		bits_processing,
+		bits_needed,
+		bit_index,
 		bits = file->last_bits,
 		byte = file->last_byte,
-		buffer_index = 0, index;
+		buffer_index,
+		node_index;
 
-	uint8_t value;
-	for (i = 0; i < size; ++i) {
-		/* Fetch the current value. */
-		value = data8[i];
-
+	for (data_index = 0, buffer_index = 0; data_index < size; ++data_index) {
 		/* Fetch the header node associated with the current value. */
-		node = &file->header.map[value];
+		node = &file->header.map[data8[data_index]];
 
 		/* Check if we can even process the current value. */
-		if ((nbits = node->nbits) == 0) {
+		if ((bits_left = node->nbits) == 0) {
 			puts("unmapped byte");
 			abort(); // TODO
 		}
@@ -360,51 +364,53 @@ compy_file_write_data(compy_file_t *const restrict file, const void *const restr
 		/* The start of the root is at the MSb of the MSB, so the index of the current byte
 		** is set at the last one available which we can calculate using the number of bits we
 		** have for the node. */
-		index = ((nbits - 1) / 8);
+		node_index = ((bits_left - 1) / 8);
 
+#if (DEBUG)
 		/* When debugging, initialize this to something distinguisable. */
-		cbits = ~0;
+		bit_index = ~0;
+#endif
 
 		/* Number of bits to be processed. */
-		rbits = (bits + nbits);
+		bits_processing = (bits + bits_left);
 
 		/* Check if we have to process at least one byte (8 bits), and loop so long as we do. */
-		while (rbits >= 8) {
+		while (bits_processing >= 8) {
 			/* Determine how many bits we have to fetch from the node. */
-			wbits = (8 - bits);
+			bits_needed = (8 - bits);
 
 			/* Determine the 0-index of the bit where we have to start fetching from. */
-			cbits = ((nbits - wbits) % 8);
+			bit_index = ((bits_left - bits_needed) % 8);
 
 			/* Check if we have to compensate for the bits left behind by a previous iteration. */
 			if (bits > 0) {
 				/* Check if we have to bridge between bytes, or if we can just use the current byte. */
-				if ((cbits + wbits) > 8) {
-					byte <<= wbits;
-					byte |= ((node->data[index] & ((1 << (nbits % 8)) - 1)) << (8 - cbits));
-					byte |= ((node->data[--index] & (((1 << (wbits - (nbits % 8))) - 1) << cbits)) >> cbits);
+				if ((bit_index + bits_needed) > 8) {
+					byte <<= bits_needed;
+					byte |= ((node->data[node_index] & ((1 << (bits_left % 8)) - 1)) << (8 - bit_index));
+					byte |= ((node->data[--node_index] & (((1 << (bits_needed - (bits_left % 8))) - 1) << bit_index)) >> bit_index);
 				} else {
-					byte = ((byte << wbits) | ((node->data[index] & (((1 << wbits) - 1) << cbits)) >> cbits));
+					byte = ((byte << bits_needed) | ((node->data[node_index] & (((1 << bits_needed) - 1) << bit_index)) >> bit_index));
 				}
 
 				bits = 0;
-				nbits -= wbits;
+				bits_left -= bits_needed;
 
 				/* Check if we exhausted the current byte of the node. */
-				if ((nbits & 7) == 0) {
-					--index;
+				if ((bits_left & 7) == 0) {
+					--node_index;
 				}
 			} else {
 				/* Check if we have to bridge between bytes, or if we can just write a full byte. */
-				if (cbits > 0) {
-					wbits = (8 - cbits);
-					byte = ((node->data[index] & ((1 << cbits) - 1)) << wbits);
-					byte |= ((node->data[--index] & (((1 << wbits) - 1) << cbits)) >> cbits);
+				if (bit_index > 0) {
+					bits_needed = (8 - bit_index);
+					byte = ((node->data[node_index] & ((1 << bit_index) - 1)) << bits_needed);
+					byte |= ((node->data[--node_index] & (((1 << bits_needed) - 1) << bit_index)) >> bit_index);
 				} else {
-					byte = node->data[index--];
+					byte = node->data[node_index--];
 				}
 
-				nbits -= 8;
+				bits_left -= 8;
 			}
 
 
@@ -422,12 +428,12 @@ compy_file_write_data(compy_file_t *const restrict file, const void *const restr
 			}
 
 			/* We have 8 bits less to process. */
-			rbits -= 8;
+			bits_processing -= 8;
 		}
 
-		if (rbits > 0) {
-			bits = rbits;
-			byte = ((byte << nbits) | ((node->data[index] & (((1 << nbits) - 1) << 0)) >> 0));
+		if (bits_processing > 0) {
+			bits = bits_processing;
+			byte = ((byte << bits_left) | ((node->data[node_index] & (((1 << bits_left) - 1) << 0)) >> 0));
 		} else {
 			bits = byte = 0;
 		}
