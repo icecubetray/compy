@@ -166,8 +166,8 @@ parse_options(int argc, char *argv[], ls_log_level_t *const out_log_level, compy
 
 
 
-int static handle_compress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file);
-int static handle_decompress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file);
+int static handle_compress(ls_log_t *const restrict log, const char *const input_file, const char *const output_file);
+int static handle_decompress(ls_log_t *const restrict log, const char *const input_file, const char *const output_file);
 
 int
 main(int argc, char *argv[], char *env[]) {
@@ -264,11 +264,11 @@ main(int argc, char *argv[], char *env[]) {
 
 int
 static
-handle_compress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file) {
+handle_compress(ls_log_t *const restrict log, const char *const input_file, const char *const output_file) {
 	FILE *fp = fopen(input_file, "r");
 	if (fp == NULL) {
-		perror("fopen()");
-		return 4;
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to open compression input file: %s", strerror(errno));
+		return 1;
 	}
 
 
@@ -276,13 +276,23 @@ handle_compress(const ls_log_t *const restrict log, const char *const input_file
 	int running;
 	size_t r;
 
-
+	compy_file_t file;
 	compy_huffman_t huff;
 
+
 	if (compy_huffman_init(&huff) != COMPY_E_SUCCESS) {
-		fputs("Huffman context initialization failed.\n", stderr);
-		return 5;
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to initialize huffman context.");
+		return 2;
 	}
+
+	if (compy_file_open(&file, output_file, 1) != COMPY_E_SUCCESS) {
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to open output file.");
+		return 3;
+	}
+
+
+	ls_log_writeln(log, LS_LOG_LEVEL_VERBOSE, "Analyzing input file...");
+
 
 	rewind(fp);
 	running = 1;
@@ -293,31 +303,38 @@ handle_compress(const ls_log_t *const restrict log, const char *const input_file
 		}
 
 		if (compy_huffman_process(&huff, buffer, r) != COMPY_E_SUCCESS) {
-			fputs("Failed to process data.\n", stderr);
-			abort(); // TODO
+			ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to process data.");
+			return 4;
 		}
 	} while (running == 1);
 
+
+	ls_log_writeln(log, LS_LOG_LEVEL_DEBUG, "Done, building huffman tree..");
+
+
 	if (compy_huffman_tree_build(&huff) != COMPY_E_SUCCESS) {
-		fputs("Huffman tree build failed.\n", stderr);
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to build tree.");
+		return 5;
+	}
+
+
+	ls_log_writeln(log, LS_LOG_LEVEL_DEBUG, "Done, writing header...");
+
+
+	if (compy_file_write_header(&file, &huff) != COMPY_E_SUCCESS) {
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to write header.");
 		return 6;
 	}
 
 
-	compy_file_t file;
+	ls_log_writeln(log, LS_LOG_LEVEL_DEBUG, "Done: (offset = %u bytes, size = %u bits).", file.header.tree_offset, file.header.tree_size);
 
-	if (compy_file_open(&file, output_file, 1) != COMPY_E_SUCCESS) {
-		fputs("Failed to open file.\n", stderr);
-		return 8;
-	}
+	ls_log_writeln(log, LS_LOG_LEVEL_VERBOSE, "Writing data...");
 
-	if (compy_file_write_header(&file, &huff) != COMPY_E_SUCCESS) {
-		fputs("Failed to write header.\n", stderr);
-		return 9;
-	}
 
 	rewind(fp);
 	running = 1;
+
 	do {
 		if ((r = fread(buffer, sizeof(*buffer), (sizeof(buffer) / sizeof(*buffer)), fp)) == 0) {
 			running = 0;
@@ -325,24 +342,28 @@ handle_compress(const ls_log_t *const restrict log, const char *const input_file
 		}
 
 		if (compy_file_write_data(&file, buffer, r) != COMPY_E_SUCCESS) {
-			fputs("Failed to write data.\n", stderr);
-			abort(); // TODO
+			ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to write data.");
+			return 7;
 		}
 	} while (running == 1);
 
+
+	ls_log_writeln(log, LS_LOG_LEVEL_VERBOSE, "Done.");
+
+
 	if (compy_file_close(&file) != COMPY_E_SUCCESS) {
-		fputs("failed to close file.\n", stderr);
-		return 10;
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to close output file.");
+		return 8;
 	}
 
 
 	if (fclose(fp) != 0) {
-		perror("fclose()");
+		ls_log_writeln(log, LS_LOG_LEVEL_ERROR, "Failed to close input file.");
 	}
 
 	if (compy_huffman_clear(&huff) != COMPY_E_SUCCESS) {
-		fputs("Huffman context clearing failed.\n", stderr);
-		return 11;
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to clear huffman context.");
+		return 9;
 	}
 
 
@@ -354,35 +375,42 @@ handle_compress(const ls_log_t *const restrict log, const char *const input_file
 
 int
 static
-handle_decompress(const ls_log_t *const restrict log, const char *const input_file, const char *const output_file) {
+handle_decompress(ls_log_t *const restrict log, const char *const input_file, const char *const output_file) {
+	FILE *fp_restore = fopen(output_file, "w");
+
+	if (fp_restore == NULL) {
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to open output file: %s", strerror(errno));
+		return 1;
+	}
+
+
 	compy_file_t file;
 
+
 	if (compy_file_open(&file, input_file, 0) != COMPY_E_SUCCESS) {
-		fputs("Failed to open file.\n", stderr);
-		return 12;
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to open input file.");
+		return 2;
 	}
 
-	FILE *fp_restore = fopen(output_file, "w");
-	if (fp_restore == NULL) {
-		perror("fopen()");
-		return 13;
-	}
+
+	int result = 0;
 
 	if (compy_file_restore(&file, fp_restore) != COMPY_E_SUCCESS) {
-		fputs("Failed to load file.\n", stderr);
-		return 14;
-	}
-
-	if (compy_file_close(&file) != COMPY_E_SUCCESS) {
-		fputs("failed to close file.\n", stderr);
-		return 15;
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to restore file.");
+		result = 3;
 	}
 
 
 	if (fclose(fp_restore) != 0) {
-		perror("fclose()");
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to close output file.");
+		result = 4;
+	}
+
+	if (compy_file_close(&file) != COMPY_E_SUCCESS) {
+		ls_log_writeln(log, LS_LOG_LEVEL_SEVERE, "Failed to close input file.");
+		return 5;
 	}
 
 
-	return 0;
+	return result;
 }
