@@ -27,7 +27,7 @@ typedef struct compy_file_header_node {
 } compy_file_header_node_t;
 
 typedef struct compy_file_header {
-	compy_file_header_node_t map[256];
+	struct compy_file_header_node map[256];
 	unsigned int populated;
 	unsigned int trim_offset;
 	unsigned int tree_offset;
@@ -36,7 +36,7 @@ typedef struct compy_file_header {
 
 typedef struct compy_file {
 	FILE *fp;
-	compy_file_header_t header;
+	struct compy_file_header header;
 	unsigned int state;
 	uint8_t last_byte;
 	uint8_t last_bits;

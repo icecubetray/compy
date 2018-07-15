@@ -36,9 +36,9 @@ struct compy_node {
 typedef struct compy_linked_node compy_linked_node_t;
 
 struct compy_linked_node {
-	compy_node_t *node;
-	compy_linked_node_t *previous;
-	compy_linked_node_t *next;
+	struct compy_node *node;
+	struct compy_linked_node *previous;
+	struct compy_linked_node *next;
 };
 
 

@@ -15,8 +15,8 @@
 
 
 typedef struct compy_huffman {
-	compy_node_t *tree_root;
-	compy_node_t *tree_lookup[256];
+	struct compy_node *tree_root;
+	struct compy_node *tree_lookup[256];
 	compy_qsval_t frequencies[256];
 } compy_huffman_t;
 
