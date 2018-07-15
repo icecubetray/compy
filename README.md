@@ -3,3 +3,6 @@ Huffman implementation written in C, compiling with a custom Makefile system. Cr
 
 ## Status
 Still a dirty implementation, but it works. Further progress on this project will mainly consist of cleanups.
+
+## Documentation
+Documentation is [available here](https://icecubetray.github.io/compy/docs).
