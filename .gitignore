@@ -1,0 +1,21 @@
+# Ignore everything.
+*
+
+# Not directories.
+!*/
+
+# Not our output.
+!docs/*
+!docs/*/*
+!docs/*/*/*
+
+# Not these project files.
+!Doxyfile
+!*.md
+
+# Not these repo files.
+!.gitignore
+!.gitmodules
+
+# Not these submodules
+!ref/master

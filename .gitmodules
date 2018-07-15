@@ -1,0 +1,4 @@
+[submodule "ref/master"]
+	path = ref/master
+	url = ./
+	branch = master
