@@ -4,6 +4,9 @@
 # Not directories.
 !*/
 
+# Except...
+submodules/
+
 # Not our output.
 !docs/*
 !docs/*/*
