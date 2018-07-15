@@ -31,7 +31,7 @@ extern "C" {
 	 * @brief Initializes the specified huffman structure.
 	 * @param context The huffman structure to initialize.
 	 * @return
-	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered <br/>
 	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
 	compy_result_t compy_huffman_init(compy_huffman_t *const context);
@@ -40,7 +40,7 @@ extern "C" {
 	 * @brief Clears the specified huffman instance.
 	 * @param context The huffman instance to clear.
 	 * @return
-	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered <br/>
 	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
 	compy_result_t compy_huffman_clear(compy_huffman_t *const context);
@@ -52,9 +52,9 @@ extern "C" {
 	 * @param data The input data source.
 	 * @param size The number of bytes to read from the input source.
 	 * @return
-	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
-	 *		`#COMPY_E_PARAM` when \p size is zero
-	 *		`#COMPY_E_LOCKED` if a tree is already built
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered <br/>
+	 *		`#COMPY_E_PARAM` when \p size is zero <br/>
+	 *		`#COMPY_E_LOCKED` if a tree is already built <br/>
 	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
 	compy_result_t compy_huffman_process(compy_huffman_t *const restrict context, const void *const restrict data, const size_t size);
@@ -63,8 +63,8 @@ extern "C" {
 	 * @brief Builds a huffman tree for the specified huffman instance.
 	 * @param context The huffman instance to work on.
 	 * @return
-	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
-	 *		`#COMPY_E_LOCKED` if a tree is already built
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered <br/>
+	 *		`#COMPY_E_LOCKED` if a tree is already built <br/>
 	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
 	compy_result_t compy_huffman_tree_build(compy_huffman_t *const context);
@@ -74,7 +74,7 @@ extern "C" {
 	 * @param context The huffman instance to work on.
 	 * @param file The output file to write to.
 	 * @return
-	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered <br/>
 	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
 	compy_result_t compy_huffman_tree_print(compy_huffman_t *const restrict context, FILE *const restrict file);

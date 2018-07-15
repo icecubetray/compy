@@ -75,7 +75,7 @@ extern "C" {
 	 * \param node The node to free.
 	 * \param children_too Whether to recursively free its children.
 	 * \return
-	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered <br/>
 	 *		`#COMPY_E_SUCCESS` otherwise
 	 */
 	compy_result_t compy_node_free(compy_node_t *const node, const unsigned int children_too);
