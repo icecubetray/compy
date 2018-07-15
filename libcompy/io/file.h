@@ -100,6 +100,16 @@ extern "C" {
 	 */
 	compy_result_t compy_file_write_data(compy_file_t *const restrict file, const void *const restrict data, const size_t size);
 
+	/*!
+	 * \brief Restores the archive given by \p file, and writes the origial file to \p fp_restore.
+	 * \param file The file instance to work on.
+	 * \param fp_restore The file stream to write the original file's contents to.
+	 * \return
+	 *		`#COMPY_E_NULL` when a `NULL` pointer is encountered
+	 *		`#COMPY_E_IO` if the underlying file is not opened (properly), or if writing/flushing fails
+	 *		`#COMPY_E_DATA` if the file's magic is invalid
+	 *		`#COMPY_E_SUCCESS` otherwise
+	 */
 	compy_result_t compy_file_restore(compy_file_t *const restrict file, FILE *const restrict fp_restore);
 
 #ifdef __cplusplus
