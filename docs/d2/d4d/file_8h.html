@@ -144,6 +144,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:a60d0036b8f6ed6805c3c163d2deae80f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes the input data as bit patterns to the archive file on the filesystem.  <a href="#a60d0036b8f6ed6805c3c163d2deae80f">More...</a><br /></td></tr>
 <tr class="separator:a60d0036b8f6ed6805c3c163d2deae80f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67f35b4c861770e263567167bf0f826d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d93/result_8h.html#a914a3ea6385ea955292265545a8e35cc">compy_result_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d4d/file_8h.html#a67f35b4c861770e263567167bf0f826d">compy_file_restore</a> (<a class="el" href="../../d2/d4d/file_8h.html#a6e5b22d6cb50b87072e987557a0585b2">compy_file_t</a> *const __restrict__ file, FILE *const __restrict__ fp_restore)</td></tr>
+<tr class="memdesc:a67f35b4c861770e263567167bf0f826d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Restores the archive given by <code>file</code>, and writes the origial file to <code>fp_restore</code>.  <a href="#a67f35b4c861770e263567167bf0f826d">More...</a><br /></td></tr>
 <tr class="separator:a67f35b4c861770e263567167bf0f826d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -280,7 +281,9 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> if opening the file fails <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> if opening the file fails <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
 
 </div>
 </div>
@@ -307,7 +310,9 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> when writing or closing fails <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> when writing or closing fails <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
 
 </div>
 </div>
@@ -345,7 +350,12 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> if the underlying file is not opened (properly), or if seeking/writing/flushing fails <code><a class="el" href="../../de/d93/result_8h.html#a79153444956a001a93112aff248f38b3" title="Object not ready. ">COMPY_E_NOT_READY</a></code> if the given huffman structure is not yet ready <code><a class="el" href="../../de/d93/result_8h.html#aad6ea917e5215a575a7190e8684cff2a" title="Object is in an invalid state. ">COMPY_E_STATE</a></code> if the file instance if in an invalid state, such as when data is already written <code><a class="el" href="../../de/d93/result_8h.html#a66b6aa073594b1db39cbf55cc7faa8e7" title="Invalid data. ">COMPY_E_DATA</a></code> if determining the bit patterns failed due to apparent lack of data <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> if the underlying file is not opened (properly), or if seeking/writing/flushing fails <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a79153444956a001a93112aff248f38b3" title="Object not ready. ">COMPY_E_NOT_READY</a></code> if the given huffman structure is not yet ready <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#aad6ea917e5215a575a7190e8684cff2a" title="Object is in an invalid state. ">COMPY_E_STATE</a></code> if the file instance if in an invalid state, such as when data is already written <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a66b6aa073594b1db39cbf55cc7faa8e7" title="Invalid data. ">COMPY_E_DATA</a></code> if determining the bit patterns failed due to apparent lack of data <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
 
 </div>
 </div>
@@ -390,7 +400,12 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <code><a class="el" href="../../de/d93/result_8h.html#aa3bd716aa1114d07695ea3c3bc1f1e45" title="Parameter invalid. ">COMPY_E_PARAM</a></code> if <code>size</code> is zero <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> if the underlying file is not opened (properly), or if writing/flushing fails <code><a class="el" href="../../de/d93/result_8h.html#aad6ea917e5215a575a7190e8684cff2a" title="Object is in an invalid state. ">COMPY_E_STATE</a></code> if the file instance if in an invalid state, such as when the header is not yet written <code><a class="el" href="../../de/d93/result_8h.html#a79153444956a001a93112aff248f38b3" title="Object not ready. ">COMPY_E_NOT_READY</a></code> if there are no mapped values in the header, such as when the header is not processed properly <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#aa3bd716aa1114d07695ea3c3bc1f1e45" title="Parameter invalid. ">COMPY_E_PARAM</a></code> if <code>size</code> is zero <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> if the underlying file is not opened (properly), or if writing/flushing fails <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#aad6ea917e5215a575a7190e8684cff2a" title="Object is in an invalid state. ">COMPY_E_STATE</a></code> if the file instance if in an invalid state, such as when the header is not yet written <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a79153444956a001a93112aff248f38b3" title="Object not ready. ">COMPY_E_NOT_READY</a></code> if there are no mapped values in the header, such as when the header is not processed properly <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
 
 </div>
 </div>
@@ -420,6 +435,19 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Restores the archive given by <code>file</code>, and writes the origial file to <code>fp_restore</code>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">file</td><td>The file instance to work on. </td></tr>
+    <tr><td class="paramname">fp_restore</td><td>The file stream to write the original file's contents to. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#ab1b536a2ff13a5ca22e27f0d1d17bb3b" title="Input/output error. ">COMPY_E_IO</a></code> if the underlying file is not opened (properly), or if writing/flushing fails <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a66b6aa073594b1db39cbf55cc7faa8e7" title="Invalid data. ">COMPY_E_DATA</a></code> if the file's magic is invalid <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
+
 </div>
 </div>
 </div><!-- contents -->
@@ -428,7 +456,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_c773687d3ec38c771b6bf4860abcb0ae.html">ref</a></li><li class="navelem"><a class="el" href="../../dir_40246323204291300515e8e61518a1b5.html">master</a></li><li class="navelem"><a class="el" href="../../dir_d547705fb48328070ddc538423e7f2fe.html">libcompy</a></li><li class="navelem"><a class="el" href="../../dir_0e0bfab5cbffbd325419824d5b6c5f62.html">io</a></li><li class="navelem"><a class="el" href="../../d2/d4d/file_8h.html">file.h</a></li>
-    <li class="footer">Generated on Sun Jul 15 2018 12:23:42 for Compy by
+    <li class="footer">Generated on Sun Jul 15 2018 13:04:30 for Compy by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
   </ul>

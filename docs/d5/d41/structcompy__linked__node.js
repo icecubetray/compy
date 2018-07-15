@@ -1,6 +1,6 @@
 var structcompy__linked__node =
 [
-    [ "node", "d5/d41/structcompy__linked__node.html#a685b36a93fd436e4cb58405a27d1ad59", null ],
-    [ "previous", "d5/d41/structcompy__linked__node.html#ab5e4c617414352f38e8b2f95564dddd7", null ],
-    [ "next", "d5/d41/structcompy__linked__node.html#ac52d52ca26d4977ba9b5d59bd13351e6", null ]
+    [ "node", "d5/d41/structcompy__linked__node.html#a52dbc1e2462ce5c6e68ced1c0d061211", null ],
+    [ "previous", "d5/d41/structcompy__linked__node.html#a7852e728bfc548ff6ac6c3e8cbbb618c", null ],
+    [ "next", "d5/d41/structcompy__linked__node.html#a2e3a2dc1cf5cd6c6728efdb5870708d6", null ]
 ];

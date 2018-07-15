@@ -127,13 +127,13 @@ Typedefs</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:af242326fb5d72c233bf5ea97607a3895"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/d4a/linked__list_8h.html#a5cfe5918840d92eb077a51a8db1b63ea">compy_node_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d4a/linked__list_8h.html#af242326fb5d72c233bf5ea97607a3895">compy_node_alloc_ex</a> (const <a class="el" href="../../d3/de6/quicksort_8h.html#a0ddc35568f75ec7714f515f7713f9827">compy_qsval_t</a> frequency, const uint8_t value, const uint16_t flags, <a class="el" href="../../d1/d4a/linked__list_8h.html#a5cfe5918840d92eb077a51a8db1b63ea">compy_node_t</a> *const left, <a class="el" href="../../d1/d4a/linked__list_8h.html#a5cfe5918840d92eb077a51a8db1b63ea">compy_node_t</a> *const right)</td></tr>
-<tr class="memdesc:af242326fb5d72c233bf5ea97607a3895"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates a linked-list node.  <a href="#af242326fb5d72c233bf5ea97607a3895">More...</a><br /></td></tr>
+<tr class="memdesc:af242326fb5d72c233bf5ea97607a3895"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates a compy node.  <a href="#af242326fb5d72c233bf5ea97607a3895">More...</a><br /></td></tr>
 <tr class="separator:af242326fb5d72c233bf5ea97607a3895"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b79e1a478414e6d8fd7d669baac96d1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d1/d4a/linked__list_8h.html#a5cfe5918840d92eb077a51a8db1b63ea">compy_node_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d4a/linked__list_8h.html#a2b79e1a478414e6d8fd7d669baac96d1">compy_node_alloc</a> (const <a class="el" href="../../d3/de6/quicksort_8h.html#a0ddc35568f75ec7714f515f7713f9827">compy_qsval_t</a> frequency, const uint8_t value, const uint16_t flags)</td></tr>
-<tr class="memdesc:a2b79e1a478414e6d8fd7d669baac96d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates a linked-list node.  <a href="#a2b79e1a478414e6d8fd7d669baac96d1">More...</a><br /></td></tr>
+<tr class="memdesc:a2b79e1a478414e6d8fd7d669baac96d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates a compy node.  <a href="#a2b79e1a478414e6d8fd7d669baac96d1">More...</a><br /></td></tr>
 <tr class="separator:a2b79e1a478414e6d8fd7d669baac96d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a04acdf6505a84929f66180b8469fcfee"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../de/d93/result_8h.html#a914a3ea6385ea955292265545a8e35cc">compy_result_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d1/d4a/linked__list_8h.html#a04acdf6505a84929f66180b8469fcfee">compy_node_free</a> (<a class="el" href="../../d1/d4a/linked__list_8h.html#a5cfe5918840d92eb077a51a8db1b63ea">compy_node_t</a> *const node, const unsigned int children_too)</td></tr>
-<tr class="memdesc:a04acdf6505a84929f66180b8469fcfee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a linked-list node and optionally its children.  <a href="#a04acdf6505a84929f66180b8469fcfee">More...</a><br /></td></tr>
+<tr class="memdesc:a04acdf6505a84929f66180b8469fcfee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a compy node and optionally its children.  <a href="#a04acdf6505a84929f66180b8469fcfee">More...</a><br /></td></tr>
 <tr class="separator:a04acdf6505a84929f66180b8469fcfee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -263,10 +263,10 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Allocates a linked-list node. </p>
+<p>Allocates a compy node. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">frequency</td><td></td></tr>
+    <tr><td class="paramname">frequency</td><td>The frequency of the leaf, or combined frequency of the non-leaf. </td></tr>
     <tr><td class="paramname">value</td><td>The value for the node. </td></tr>
     <tr><td class="paramname">flags</td><td>The flags for the node. </td></tr>
     <tr><td class="paramname">left</td><td>The left-hand node of the new node. </td></tr>
@@ -310,10 +310,10 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Allocates a linked-list node. </p>
+<p>Allocates a compy node. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">frequency</td><td></td></tr>
+    <tr><td class="paramname">frequency</td><td>The frequency of the leaf, or combined frequency of the non-leaf. </td></tr>
     <tr><td class="paramname">value</td><td>The value for the node. </td></tr>
     <tr><td class="paramname">flags</td><td>The flags for the node. </td></tr>
   </table>
@@ -349,7 +349,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Frees a linked-list node and optionally its children. </p>
+<p>Frees a compy node and optionally its children. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">node</td><td>The node to free. </td></tr>
@@ -357,7 +357,8 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> if <code>node</code> is <code>NULL</code>, <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd><code><a class="el" href="../../de/d93/result_8h.html#a75c00d32808c8c9e2bc2cb1bc4c3e68c" title="NULL pointer encountered. ">COMPY_E_NULL</a></code> when a <code>NULL</code> pointer is encountered <br />
+ <code><a class="el" href="../../de/d93/result_8h.html#a09e545805314314a5dabfc877a9090f9" title="Success. ">COMPY_E_SUCCESS</a></code> otherwise </dd></dl>
 
 </div>
 </div>
@@ -367,7 +368,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_c773687d3ec38c771b6bf4860abcb0ae.html">ref</a></li><li class="navelem"><a class="el" href="../../dir_40246323204291300515e8e61518a1b5.html">master</a></li><li class="navelem"><a class="el" href="../../dir_d547705fb48328070ddc538423e7f2fe.html">libcompy</a></li><li class="navelem"><a class="el" href="../../dir_8d3aa3c62a93e2594a9da7d2ea6ef06c.html">data</a></li><li class="navelem"><a class="el" href="../../d1/d4a/linked__list_8h.html">linked_list.h</a></li>
-    <li class="footer">Generated on Sun Jul 15 2018 12:23:42 for Compy by
+    <li class="footer">Generated on Sun Jul 15 2018 13:04:30 for Compy by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.14 </li>
   </ul>
